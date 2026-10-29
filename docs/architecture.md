@@ -35,6 +35,10 @@ MaxVisibleGroups is either All or a nonnegative integer. Visibility is independe
 
 The host owns its LoadLibrary reference and must stop calling plugin methods before releasing it. The plugin owns its singleton and items; the host must not delete them. Each worker takes an additional GetModuleHandleEx reference before launching. C++ captures, probe handles and callback state are destroyed before FreeLibraryAndExitThread. No joins, locks, configuration writes or network operations run from DllMain or static destruction. Workers are finite; an ordinary FreeLibrary can defer actual unloading until outstanding probes drain. Process termination is not a graceful shutdown guarantee.
 
+Returned item metadata uses immutable object-owned storage. Tooltip buffers are separate per calling OS thread, protected by a mutex and owned by the plugin rather than nontrivial thread_local objects. A tooltip pointer survives other threads' reads and background updates; it is valid until the same thread calls GetTooltipInfo again, exits, or the module actually unloads. Per-reader buffers remain allocated until unload; this is bounded for TrafficMonitor's fixed reader threads, not for a host that creates unbounded new reader thread IDs.
+
+The configured deadline bounds the I/O wait budget. Cancellation still has to drain OS DNS providers and WinHTTP callbacks before releasing their state. Abnormal provider stalls can therefore defer cleanup beyond the budget; there is no unsafe forced-thread termination fallback.
+
 References: [FreeLibraryAndExitThread](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-freelibraryandexitthread), [DLL best practices](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-best-practices), [WinHTTP options](https://learn.microsoft.com/en-us/windows/win32/winhttp/option-flags).
 
 ## Status rules
