@@ -1,0 +1,56 @@
+#include <windows.h>
+#include "resource.h"
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+IDD_SETTINGS DIALOGEX 0, 0, 650, 382
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "NetWatch settings"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "Groups", -1, 10, 9, 170, 12
+    LISTBOX IDC_GROUPS, 10, 24, 170, 113, LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP | WS_BORDER
+    PUSHBUTTON "Add", IDC_GROUP_ADD, 10, 141, 39, 15
+    PUSHBUTTON "Delete", IDC_GROUP_DELETE, 52, 141, 42, 15
+    PUSHBUTTON "Up", IDC_GROUP_UP, 97, 141, 39, 15
+    PUSHBUTTON "Down", IDC_GROUP_DOWN, 139, 141, 41, 15
+    LTEXT "Name", -1, 10, 166, 40, 10
+    EDITTEXT IDC_GROUP_NAME, 52, 163, 128, 15, ES_AUTOHSCROLL
+    LTEXT "Label", -1, 10, 188, 40, 10
+    EDITTEXT IDC_GROUP_LABEL, 52, 185, 128, 15, ES_AUTOHSCROLL
+    CONTROL "Monitor this group", IDC_GROUP_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 207, 170, 13
+    CONTROL "Show in taskbar", IDC_GROUP_VISIBLE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 225, 170, 13
+    LTEXT "MaxVisibleGroups", -1, 10, 249, 100, 12
+    COMBOBOX IDC_LIMIT, 10, 265, 100, 90, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT "All or 0-4096. Hidden groups can still be monitored.", -1, 10, 288, 170, 29
+    LTEXT "Checks in selected group", -1, 194, 9, 270, 12
+    LISTBOX IDC_CHECKS, 194, 24, 446, 68, LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP | WS_BORDER
+    PUSHBUTTON "Add check", IDC_CHECK_ADD, 194, 98, 69, 15
+    PUSHBUTTON "Delete check", IDC_CHECK_DELETE, 269, 98, 73, 15
+    LTEXT "Name", -1, 194, 125, 43, 10
+    EDITTEXT IDC_CHECK_NAME, 245, 122, 213, 15, ES_AUTOHSCROLL
+    LTEXT "Type", -1, 471, 125, 28, 10
+    COMBOBOX IDC_CHECK_KIND, 506, 122, 134, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT "Host / URL", -1, 194, 148, 48, 10
+    EDITTEXT IDC_CHECK_TARGET, 245, 145, 395, 15, ES_AUTOHSCROLL
+    LTEXT "TCP port", -1, 194, 172, 49, 10
+    EDITTEXT IDC_CHECK_PORT, 245, 169, 58, 15, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT "Interval (s)", -1, 315, 172, 54, 10
+    EDITTEXT IDC_CHECK_INTERVAL, 372, 169, 60, 15, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT "Timeout (ms)", -1, 448, 172, 70, 10
+    EDITTEXT IDC_CHECK_TIMEOUT, 523, 169, 117, 15, ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL "Enabled", IDC_CHECK_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 194, 194, 105, 13
+    PUSHBUTTON "Test now (draft)", IDC_TEST, 506, 191, 134, 17
+    LTEXT "Manual test result (does not change monitoring history)", -1, 194, 218, 446, 12
+    EDITTEXT IDC_RESULT, 194, 234, 446, 76, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
+    LTEXT "Display changes require restarting TrafficMonitor. Monitoring changes apply on Save. Network tests run in the background; closing this window is safe.", IDC_NOTICE, 10, 328, 470, 40
+    DEFPUSHBUTTON "Save", IDOK, 497, 353, 68, 19
+    PUSHBUTTON "Cancel", IDCANCEL, 572, 353, 68, 19
+END
+STRINGTABLE
+BEGIN
+    IDS_INVALID_NUMBER "Enter a whole number within the allowed range."
+    IDS_BUSY "Probe capacity is busy (four workers / four starts per second). Try again shortly."
+    IDS_RUNNING "Testing in the background..."
+    IDS_SAVE_ERROR "Cannot save configuration: "
+    IDS_LOAD_ERROR "The previous configuration could not be loaded. Save will replace it."
+    IDS_RESTART "Saved. Restart TrafficMonitor to apply display labels, group order, visibility and MaxVisibleGroups. Select the new items in TrafficMonitor's taskbar options."
+END
