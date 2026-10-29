@@ -14,7 +14,7 @@ cmake --build --preset release
 ctest --preset release --output-on-failure
 ```
 
-Final recorded run: **7/7 passed**, 24.73 seconds. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`.
+Final recorded run: **7/7 passed**, 24.71 seconds. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`.
 
 | Test | Actual coverage |
 | --- | --- |
@@ -44,9 +44,28 @@ The disposable fixture lives in `.work/integration/TrafficMonitor`. Its executab
 
 Confirmed by process inspection: the portable host started, remained responsive, and loaded this project's NetWatch.dll from its own plugins directory. No installed executable, installed plugin or existing process was replaced or stopped.
 
-The independent settings preview was visually inspected through the computer-use skill: controls fit, adding a check populated its fields, and a manual loopback ICMP result appeared. Later GUI input attempts failed with geometry errors, so saving through that preview was not recorded as successful. Save/load is covered by the native controller/config tests.
+The independent settings preview was visually inspected through the computer-use skill: controls fit, adding a check populated its fields, and a manual loopback ICMP result appeared. Saving through that early preview was not recorded as successful because of geometry errors. A later host integration test below exercised GUI saving successfully.
 
-The portable host's floating/taskbar windows were not exposed as targetable windows by the available computer-use helper, even after retrying the visible launch and explicit window-position settings. A duplicate-instance warning was observable, but its buttons were not used because upstream resolves their target by a global window class. **Actual taskbar appearance, per-monitor DPI behavior, host tooltip presentation and normal GUI exit during active requests remain unverified.** Cross-DLL GDI drawing and safe ordinary FreeLibrary behavior are covered independently; those tests do not substitute for a completed GUI integration test.
+The release binary's floating/taskbar windows were not exposed as targetable windows by the computer-use helper. Upstream gives both windows WS_EX_TOOLWINDOW. A duplicate-instance warning was observable, but its buttons were not used because upstream resolves their target by a global window class. The alternative app-control runtime also failed to initialize with `failed to write kernel assets`.
+
+### Additional source-built integration host
+
+To inspect the real host path without manipulating an installed process, `tests/prepare_source_host.py` builds an additional disposable Lite host from the exact V1.86 source commit. It requires VS 2026 with MFC, which is an extra test-host dependency, not a NetWatch dependency. Its changes are limited to unique instance-mutex/window-class names, a regular main-window style for computer use, explicit UTF-8 compilation and an opt-in timer hook. The hook calls the live taskbar object's **unmodified ShowInfo renderer** into a bitmap and reads the text already stored in its tooltip control. It does not change plugin loading, layout calculation, network probes, item drawing or shutdown handlers. The custom window class is changed in both registration and the dialog resource.
+
+The observed host lives in `.work/source-integration/fixture/TrafficMonitor`. Its recorded SHA-256 is `50ec96adbbf82faf5c5290a758ad8035299edf34ab53d6e5a39d74f4b50dc62f`. It loaded the exact production DLL, SHA-256 `c06fa56cdb84fef59de0e2c4054ef371614986f177d5006ffa3152ba58dcdc63`. This is a modified, source-built integration host, not certification of the pristine release binary.
+
+Confirmed results:
+
+- The live taskbar window reported `visible=1` and successful insertion into the Windows taskbar. Its client size was **177 x 48 pixels at DPI 144 (150%)**. Its GDI renderer produced the four expected labels and colored circles shown below. This is a render capture from the live host, not a desktop screenshot.
+- The host's tooltip control contained all four groups, typed ICMP measurements, raw DNS errors, failure counters and timestamps. The retained [NetWatch-only tooltip excerpt](evidence/tooltip-v186.txt) excludes unrelated system metrics. The popup's actual hover/placement behavior was not visually exercised.
+- In the actual host's Plugin Management dialog, NetWatch 0.1.0 reported **Load succeed**. Opening Options showed the native NetWatch settings dialog. Unchecking Monitor this group and clicking Save changed the persisted group-enabled field from 1 to 0 while preserving group/check UUIDs. The host displayed the save/restart notice and returned to Plugin Management.
+- Exit was selected through the actual host's context menu, with no forced termination. A control run with NetWatch disabled and absent from the loaded module list returned code **2**. The NetWatch run during a held loopback HTTP response returned the same code **2**. At process exit the request was **21.152 seconds old**, below its **30-second timeout**, and the server had completed zero responses. A process handle opened before the click confirmed termination. This tests normal process exit, not graceful completion of each outstanding probe after process termination.
+
+![TrafficMonitor V1.86 GDI renderer at 150% DPI](images/Taskbar-v186-gdi-150.png)
+
+The initial HTTP exit attempt happened after the request budget had elapsed and was not counted as an active-request test. The successful repeat recorded the process-exit timestamp and checked it against server receipt time. The observer initially assumed an exit code of zero; that assumption was rejected by the plugin-disabled control. The installed MFC source and TrafficMonitor's ExitInstance delegate confirm that modal/message return codes can be propagated. All observed codes are retained verbatim in the ignored evidence files.
+
+Reproduction and raw artifacts are described in [integration testing](integration.md). The preparation script was also run from start to finish in a fresh `.work/source-integration-repro` directory and built successfully. The release DLL was not changed by this follow-up.
 
 ## Failures encountered and corrected
 
@@ -60,6 +79,6 @@ The portable host's floating/taskbar windows were not exposed as targetable wind
 
 - A successful trusted HTTPS exchange was not exercised against a controlled trusted-CA fixture; invalid TLS rejection was exercised. No Windows trust settings were changed.
 - DNS-provider cancellation and WinHTTP callback draining must finish before stack state or DLL code can be released. The I/O budget is bounded, but abnormal OS/provider stalls can defer cleanup beyond that budget. Forced process termination is not graceful shutdown.
-- Ordinary FreeLibrary during active ICMP/HTTP was tested; normal TrafficMonitor GUI exit and long-duration CPU/memory behavior were not.
-- x86/ARM64, alternate TrafficMonitor releases, translated UI, unusual DNS providers and high-DPI/dark/light theme matrices were not verified.
+- Ordinary FreeLibrary during active ICMP/HTTP and normal GUI exit of the source-built host during active HTTP were tested. Pristine-binary GUI exit and long-duration CPU/memory behavior were not.
+- x86/ARM64, alternate TrafficMonitor releases, translated UI, unusual DNS providers, D2D, per-monitor DPI transitions and a complete dark/light theme matrix were not verified. The observed source-host GDI layout used 150% DPI.
 - The scheduler intentionally sacrifices timeliness for bounded work. Large configurations can become gray because results expire. There is no promise of exact intervals under overload.

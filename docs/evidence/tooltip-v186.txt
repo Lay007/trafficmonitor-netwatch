@@ -1,0 +1,9 @@
+NetWatch
+UP (UP fixture): Up
+  Loopback: Up; Success; ICMP RTT=0.0 ms; updated 2026-10-29 15:46:36
+MIX (MIX fixture): Partial failure
+  Loopback: Up; Success; ICMP RTT=0.0 ms; updated 2026-10-29 15:46:36
+  Invalid name: Down; DNS error; ICMP RTT=n/a; code=11001; failures=3/3; updated 2026-10-29 15:46:36
+DOWN (DOWN fixture): Down
+  Invalid name: Down; DNS error; ICMP RTT=n/a; code=11001; failures=3/3; updated 2026-10-29 15:46:36
+NEW (NEW fixture): Unknown
