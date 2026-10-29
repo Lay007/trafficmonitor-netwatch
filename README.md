@@ -99,6 +99,10 @@ python tests/prepare_portable.py --dll build/Release/NetWatch.dll --output .work
 
 If another TrafficMonitor instance must keep running, add `--isolate-instance`. This changes only the copy's fixed-length instance-mutex string, records original/test hashes, and leaves installed files and running processes untouched. This modified copy is a test artifact, not a release distribution. The fixture exports UP, MIX, DOWN and NEW groups using only loopback and a deliberately invalid hostname. See [verification](docs/verification.md) for actual results and limits.
 
+For the additional source-built V1.86 integration host, render capture and GUI-exit checks, see [integration testing](docs/integration.md). That optional host needs MFC; the plugin itself does not. The verified 150% GDI result is shown below.
+
+![TrafficMonitor V1.86 taskbar GDI render at 150%](docs/images/Taskbar-v186-gdi-150.png)
+
 Source layout: `model/config` hold policy and persistence; `probes` owns network APIs; `engine` schedules finite workers; `plugin` adapts API v7 and draws indicators; `settings/resources` implement the native dialog. Read [architecture and lifecycle](docs/architecture.md) before changing worker ownership, returned pointers, or item enumeration.
 
 ## Licensing
