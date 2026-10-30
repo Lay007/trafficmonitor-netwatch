@@ -20,7 +20,7 @@ public:
     void dispatch();
     bool manual(Check check, std::shared_ptr<ManualResult> result);
     Health group_health(const std::wstring& id) const;
-    std::wstring tooltip() const;
+    std::wstring tooltip(Language language = Language::English) const;
     unsigned active() const;
 };
 // The callable must own its data and must not retain host/window pointers.

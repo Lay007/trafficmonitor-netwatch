@@ -17,6 +17,30 @@ static void wait_idle(Engine& engine) {
     require(engine.active() == 0, "Engine did not become idle");
 }
 static void core() {
+    require(ui_language(0x419, 0x409) == Language::Russian, "Host Russian must override Windows English");
+    require(ui_language(0x409, 0x419) == Language::English, "Host English must override Windows Russian");
+    require(ui_language(0, 0x419) == Language::Russian, "Missing host language must use Windows language");
+    require(ui_language(0x407, 0x419) == Language::English, "Unsupported host language must use English");
+    auto layout = initial_config();
+    const auto exported = visible_groups(layout);
+    auto edited = layout;
+    edited.groups[0].enabled = false; edited.groups[0].checks.push_back(make_check());
+    require(!display_changed(exported, edited), "Monitoring edits require no restart");
+    edited.groups[0].label = L"Changed"; require(display_changed(exported, edited), "Changed label requires restart");
+    edited = layout; edited.groups[0].name = L"Changed"; require(display_changed(exported, edited), "Changed item name requires restart");
+    edited = layout; edited.max_visible = 0; require(display_changed(exported, edited), "Zero visible limit requires restart");
+    edited = layout; edited.max_visible = 4; require(!display_changed(exported, edited), "Equivalent effective layout requires no restart");
+    Group hidden; hidden.id = new_id(); hidden.visible = false; edited.groups.push_back(hidden);
+    require(!display_changed(exported, edited), "Adding hidden group requires no restart");
+    edited.groups.back().visible = true; require(display_changed(exported, edited), "Adding visible group requires restart");
+    auto two_exported = visible_groups(edited); std::swap(edited.groups[0], edited.groups[1]);
+    require(display_changed(two_exported, edited), "Visible order change requires restart");
+    edited.groups.clear(); require(display_changed(exported, edited), "Removing visible group requires restart");
+    require(!display_changed({}, edited), "Empty layout unchanged");
+    auto invalid_ru = layout; invalid_ru.groups[0].name.clear();
+    require(validate(invalid_ru, Language::Russian).find(L"Название группы") != std::wstring::npos, "Russian validation");
+    Check untested;
+    require(describe(untested, nullptr, Clock::now(), Language::Russian).find(L"ещё не проверено") != std::wstring::npos, "Russian tooltip");
     Config c = initial_config();
     const auto original = c.groups[0].id;
     Group second; second.id = new_id(); second.name = L"Second"; c.groups.push_back(second);

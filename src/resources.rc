@@ -1,5 +1,6 @@
 #include <windows.h>
 #include "resource.h"
+#pragma code_page(65001)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 IDD_SETTINGS DIALOGEX 0, 0, 650, 382
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
@@ -53,4 +54,10 @@ BEGIN
     IDS_SAVE_ERROR "Cannot save configuration: "
     IDS_LOAD_ERROR "The previous configuration could not be loaded. Save will replace it."
     IDS_RESTART "Saved. Restart TrafficMonitor to apply display labels, group order, visibility and MaxVisibleGroups. Select the new items in TrafficMonitor's taskbar options."
+    IDS_ALL "All"
+    IDS_NEW_GROUP "New group"
+    IDS_NEW_CHECK "New check"
+    IDS_UNEXPECTED "Unexpected error"
 END
+
+#include "resources_ru.rc"

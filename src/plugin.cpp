@@ -57,9 +57,16 @@ class Plugin final : public ITMPlugin {
     std::filesystem::path path;
     std::wstring load_error;
     std::vector<std::unique_ptr<Item>> items;
+    std::vector<Group> exported;
+    Language language{Language::English};
     bool initialized{};
     std::mutex tooltip_mutex;
     std::map<DWORD, std::wstring> tooltips;
+    std::wstring load_message() const {
+        if (load_error.empty()) return {};
+        return std::wstring(translated(language, L"Configuration could not be loaded: ", L"Не удалось загрузить настройки: ")) + load_error +
+            translated(language, L". The original file has not been changed.", L". Исходный файл не изменён.");
+    }
 public:
     IPluginItem* GetItem(int index) override {
         return index >= 0 && static_cast<size_t>(index) < items.size() ? items[index].get() : nullptr;
@@ -68,7 +75,7 @@ public:
     const wchar_t* GetInfo(PluginInfoIndex index) override {
         switch (index) {
         case TMI_NAME: return L"NetWatch";
-        case TMI_DESCRIPTION: return L"Network availability groups (ICMP, TCP, HTTP/HTTPS)";
+        case TMI_DESCRIPTION: return translated(language, L"Network availability groups (ICMP, TCP, HTTP/HTTPS)", L"Группы доступности сети (ICMP, TCP, HTTP/HTTPS)");
         case TMI_AUTHOR: return L"NetWatch contributors";
         case TMI_COPYRIGHT: return L"NetWatch contributors, 2026";
         case TMI_VERSION: return L"0.1.0";
@@ -79,11 +86,13 @@ public:
         if (index != EI_CONFIG_DIR || initialized || !value) return;
         path = std::filesystem::path(value) / L"NetWatch.conf";
         try { engine.apply(load_config(path)); }
-        catch (const std::exception& error) { load_error = L"Configuration could not be loaded: " + wide(error.what()) + L". The original file has not been changed."; }
+        catch (const std::exception& error) { load_error = wide(error.what()); }
     }
-    void OnInitialize(ITrafficMonitor*) override {
+    void OnInitialize(ITrafficMonitor* host) override {
         if (initialized) return;
-        for (const auto& group : visible_groups(engine.configuration())) items.push_back(std::make_unique<Item>(engine, group));
+        language = ui_language(host ? host->GetLanguageId() : 0, GetUserDefaultUILanguage());
+        exported = visible_groups(engine.configuration());
+        for (const auto& group : exported) items.push_back(std::make_unique<Item>(engine, group));
         initialized = true;
     }
     OptionReturn ShowOptionsDialog(void* parent) override {
@@ -92,7 +101,7 @@ public:
         GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
             reinterpret_cast<LPCWSTR>(&TMPluginAnchor), &module);
         try {
-            if (show_settings(static_cast<HWND>(parent), module, engine, path, load_error)) {
+            if (show_settings(static_cast<HWND>(parent), module, engine, path, load_message(), exported, language)) {
                 std::lock_guard<std::mutex> lock(tooltip_mutex); load_error.clear(); return OR_OPTION_CHANGED;
             }
             return OR_OPTION_UNCHANGED;
@@ -100,9 +109,9 @@ public:
         catch (const std::exception& error) { MessageBoxW(static_cast<HWND>(parent), wide(error.what()).c_str(), L"NetWatch", MB_OK | MB_ICONERROR); return OR_OPTION_UNCHANGED; }
     }
     const wchar_t* GetTooltipInfo() override {
-        auto text = engine.tooltip();
+        auto text = engine.tooltip(language);
         std::lock_guard<std::mutex> lock(tooltip_mutex);
-        if (!load_error.empty()) text += L"\r\n" + load_error;
+        if (!load_error.empty()) text += L"\r\n" + load_message();
         auto& storage = tooltips[GetCurrentThreadId()]; storage = std::move(text); return storage.c_str();
     }
     static void TMPluginAnchor() {}

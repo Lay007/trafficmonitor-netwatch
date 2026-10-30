@@ -1,5 +1,6 @@
 #pragma once
 #define IDD_SETTINGS 100
+#define IDD_SETTINGS_RU 1100
 #define IDC_GROUPS 101
 #define IDC_GROUP_NAME 102
 #define IDC_GROUP_LABEL 103
@@ -29,3 +30,7 @@
 #define IDS_SAVE_ERROR 203
 #define IDS_LOAD_ERROR 204
 #define IDS_RESTART 205
+#define IDS_ALL 206
+#define IDS_NEW_GROUP 207
+#define IDS_NEW_CHECK 208
+#define IDS_UNEXPECTED 209

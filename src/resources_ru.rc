@@ -1,0 +1,59 @@
+LANGUAGE LANG_RUSSIAN, SUBLANG_RUSSIAN_RUSSIA
+IDD_SETTINGS_RU DIALOGEX 0, 0, 650, 382
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Настройки NetWatch"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "Группы", -1, 10, 9, 170, 12
+    LISTBOX IDC_GROUPS, 10, 24, 170, 113, LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP | WS_BORDER
+    PUSHBUTTON "Добавить", IDC_GROUP_ADD, 10, 141, 39, 15
+    PUSHBUTTON "Удалить", IDC_GROUP_DELETE, 52, 141, 42, 15
+    PUSHBUTTON "Выше", IDC_GROUP_UP, 97, 141, 39, 15
+    PUSHBUTTON "Ниже", IDC_GROUP_DOWN, 139, 141, 41, 15
+    LTEXT "Название", -1, 10, 166, 40, 10
+    EDITTEXT IDC_GROUP_NAME, 52, 163, 128, 15, ES_AUTOHSCROLL
+    LTEXT "Метка", -1, 10, 188, 40, 10
+    EDITTEXT IDC_GROUP_LABEL, 52, 185, 128, 15, ES_AUTOHSCROLL
+    CONTROL "Проверять эту группу", IDC_GROUP_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 207, 170, 13
+    CONTROL "Показывать на панели задач", IDC_GROUP_VISIBLE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 225, 170, 13
+    LTEXT "Лимит видимых групп", -1, 10, 249, 140, 12
+    COMBOBOX IDC_LIMIT, 10, 265, 100, 90, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT "Все или 0-4096. Скрытые группы тоже можно проверять.", -1, 10, 288, 170, 29
+    LTEXT "Проверки выбранной группы", -1, 194, 9, 270, 12
+    LISTBOX IDC_CHECKS, 194, 24, 446, 68, LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP | WS_BORDER
+    PUSHBUTTON "Добавить", IDC_CHECK_ADD, 194, 98, 69, 15
+    PUSHBUTTON "Удалить", IDC_CHECK_DELETE, 269, 98, 73, 15
+    LTEXT "Название", -1, 194, 125, 43, 10
+    EDITTEXT IDC_CHECK_NAME, 245, 122, 213, 15, ES_AUTOHSCROLL
+    LTEXT "Тип", -1, 471, 125, 28, 10
+    COMBOBOX IDC_CHECK_KIND, 506, 122, 134, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT "Узел / URL", -1, 194, 148, 48, 10
+    EDITTEXT IDC_CHECK_TARGET, 245, 145, 395, 15, ES_AUTOHSCROLL
+    LTEXT "Порт TCP", -1, 194, 172, 49, 10
+    EDITTEXT IDC_CHECK_PORT, 245, 169, 58, 15, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT "Интервал (с)", -1, 315, 172, 54, 10
+    EDITTEXT IDC_CHECK_INTERVAL, 372, 169, 60, 15, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT "Тайм-аут (мс)", -1, 448, 172, 70, 10
+    EDITTEXT IDC_CHECK_TIMEOUT, 523, 169, 117, 15, ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL "Включена", IDC_CHECK_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 194, 194, 105, 13
+    PUSHBUTTON "Проверить сейчас (черновик)", IDC_TEST, 506, 191, 134, 17
+    LTEXT "Результат ручной проверки (не меняет историю мониторинга)", -1, 194, 218, 446, 12
+    EDITTEXT IDC_RESULT, 194, 234, 446, 76, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
+    LTEXT "Изменения индикаторов требуют перезапуска TrafficMonitor. Изменения проверок действуют после сохранения. Сетевые проверки выполняются в фоне; окно можно закрыть.", IDC_NOTICE, 10, 328, 470, 40
+    DEFPUSHBUTTON "Сохранить", IDOK, 497, 353, 68, 19
+    PUSHBUTTON "Отмена", IDCANCEL, 572, 353, 68, 19
+END
+// Russian strings use the English resource ID plus 1000.
+STRINGTABLE
+BEGIN
+    1200 "Введите целое число в допустимом диапазоне."
+    1201 "Все слоты проверок заняты (4 одновременно, 4 запуска в секунду). Повторите позже."
+    1202 "Проверка выполняется в фоне..."
+    1203 "Не удалось сохранить настройки: "
+    1204 "Не удалось загрузить прежние настройки. Сохранение заменит их."
+    1205 "Сохранено. Перезапустите TrafficMonitor, чтобы применить изменения индикаторов: названия, метки, порядок, видимость и лимит групп. Новые индикаторы включите в настройках панели задач TrafficMonitor."
+    1206 "Все"
+    1207 "Новая группа"
+    1208 "Новая проверка"
+    1209 "Непредвиденная ошибка"
+END

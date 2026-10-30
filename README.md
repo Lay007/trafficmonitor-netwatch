@@ -45,11 +45,11 @@ The VS 2022 commands are provided for portability; the recorded local verificati
 6. Set the interval in seconds (default 30) and timeout in milliseconds (default 2000). **Test now (draft)** probes the edited check without saving it or changing monitoring history. A successful manual probe does not immediately make the taskbar circle green.
 7. Save. After display changes, restart TrafficMonitor and select the new plugin items in its taskbar display settings.
 
-Edits are captured when switching selection, testing or saving. Cancel discards the draft. Delete affects the draft until Save. The native dialog is English by default and uses Windows dialog/string resources; see [localization](docs/localization.md).
+Edits are captured when switching selection, testing or saving. Cancel discards the draft. Delete affects the draft until Save. The native dialog follows TrafficMonitor's language: Russian and English are supported, with English as the fallback for other languages. See [localization](docs/localization.md).
 
 `MaxVisibleGroups` accepts `All` or 0-4096. Zero exports no indicators. Otherwise the first N groups with Show in taskbar selected are exported in configuration order. Hidden groups continue to run if monitoring is enabled. Each group and check has a persistent UUID independent of its name and position.
 
-**TrafficMonitor 1.86 enumerates plugin items only at startup.** Adding/removing/reordering groups, changing labels/names, visibility or MaxVisibleGroups requires a restart to change the exported display layout. Existing item objects and their text remain valid until unload. Removed items turn gray until restart. Monitoring edits apply on Save and discard results from the previous configuration generation. TrafficMonitor's own item selection and ordering can further affect final presentation.
+**TrafficMonitor 1.86 enumerates plugin items only at startup.** Changing the effective visible item list, its order, names or labels requires a restart. Visibility and MaxVisibleGroups changes only require a restart when they affect that list. Save shows a restart notice only if the desired list differs from the items exported at load; reopening settings preserves that reminder until restart or until the original layout is restored. Existing item objects and their text remain valid until unload. Removed items turn gray until restart. Monitoring edits apply on Save and discard results from the previous configuration generation. TrafficMonitor's own item selection and ordering can further affect final presentation.
 
 ## Probes and status rules
 
