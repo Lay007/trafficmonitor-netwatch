@@ -1,6 +1,6 @@
 # Verification record
 
-Date: 2026-10-29. No installed TrafficMonitor or IPRegionMon files were changed. No remote repository was created; nothing was pushed or deployed.
+Updated: 2026-10-30. No installed TrafficMonitor or IPRegionMon files were changed. The original 2026-10-29 integration observations below describe the earlier DLL. The initial six commits were subsequently pushed to the user-created GitHub repository; this follow-up remains local and is not deployed.
 
 ## Build and automated tests
 
@@ -14,7 +14,21 @@ cmake --build --preset release
 ctest --preset release --output-on-failure
 ```
 
-Final recorded run: **7/7 passed**, 24.71 seconds. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`.
+Latest recorded run: **7/7 passed**, 25.42 seconds, on 2026-10-30 after the Save-notice and localization changes. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`.
+
+### Save notice and Russian UI follow-up (2026-10-30)
+
+Before the fix, the regression test exercised the actual settings controller: adding a check to the existing group and saving persisted the check but incorrectly displayed a restart notice. The test failed with `Check-only save incorrectly requests a host restart`.
+
+The controller now compares the effective visible IDs, names, labels and order with the immutable list exported at plugin initialization. The same test passes without a notice. A changed label produces one localized notice; reopening settings before restart still produces it; using a freshly exported layout removes it for later check-only saves. Both paths verify the saved file and live configuration. Model tests also cover names, ordering, visible/hidden additions, removal, zero/equivalent limits and monitoring-only changes.
+
+Russian dialog resources, notification strings, validation, probe statuses, manual results and tooltips were added. Tests instantiate both real dialog resources, verify Russian Unicode captions/buttons and `Все`, persist the unchanged `All` file token, and obtain a localized loopback ICMP result. Language-selection tests cover host-over-Windows precedence, absent host language and unsupported-language fallback. The ABI test loads the actual DLL with Russian and English host implementations and verifies localized descriptions/tooltips while preserving configured names.
+
+An intermediate test caught question marks in the generated Russian resource due to the shell pipeline's encoding. The resource was rewritten directly as UTF-8 with an explicit resource-compiler code page; the exact Russian caption assertion then passed.
+
+Desktop inspection of the updated Russian dialog was attempted but unavailable: the computer-use helper returned `failed to connect native pipe` / Windows error 2 on the initial call, retry and retry after runtime reset. Automated resource/controller tests passed; visual clipping and desktop Save behavior of this updated DLL are not claimed as verified. The earlier English source-host GUI evidence below remains historical.
+
+Updated Release DLL SHA-256: `eafe5a3685671d94b01dd4aaec076ac1bddcc2036445630bf9c95b60b9c42ba5`.
 
 | Test | Actual coverage |
 | --- | --- |
@@ -80,5 +94,5 @@ Reproduction and raw artifacts are described in [integration testing](integratio
 - A successful trusted HTTPS exchange was not exercised against a controlled trusted-CA fixture; invalid TLS rejection was exercised. No Windows trust settings were changed.
 - DNS-provider cancellation and WinHTTP callback draining must finish before stack state or DLL code can be released. The I/O budget is bounded, but abnormal OS/provider stalls can defer cleanup beyond that budget. Forced process termination is not graceful shutdown.
 - Ordinary FreeLibrary during active ICMP/HTTP and normal GUI exit of the source-built host during active HTTP were tested. Pristine-binary GUI exit and long-duration CPU/memory behavior were not.
-- x86/ARM64, alternate TrafficMonitor releases, translated UI, unusual DNS providers, D2D, per-monitor DPI transitions and a complete dark/light theme matrix were not verified. The observed source-host GDI layout used 150% DPI.
+- x86/ARM64, alternate TrafficMonitor releases, unusual DNS providers, D2D, per-monitor DPI transitions and a complete dark/light theme matrix were not verified. Russian UI resource/controller tests passed, but its desktop layout was not visually inspected. The earlier source-host GDI layout used 150% DPI.
 - The scheduler intentionally sacrifices timeliness for bounded work. Large configurations can become gray because results expire. There is no promise of exact intervals under overload.

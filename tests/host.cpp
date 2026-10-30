@@ -14,6 +14,20 @@
 
 static void require(bool value, const char* message) { if (!value) throw std::runtime_error(message); }
 using Factory = ITMPlugin* (*)();
+class LanguageHost final : public ITrafficMonitor {
+public:
+    unsigned short language{0x419};
+    int GetAPIVersion() override { return 0; }
+    const wchar_t* GetVersion() override { return L"1.86"; }
+    double GetMonitorValue(MonitorItem) override { return 0; }
+    const wchar_t* GetMonitorValueString(MonitorItem, int) override { return L""; }
+    void ShowNotifyMessage(const wchar_t*) override {}
+    unsigned short GetLanguageId() const override { return language; }
+    const wchar_t* GetPluginConfigDir() const override { return L""; }
+    int GetDPI(DPIType) const override { return 96; }
+    unsigned int GetThemeColor() const override { return 0; }
+    const wchar_t* GetStringRes(const wchar_t*, const wchar_t*) override { return L""; }
+};
 static HMODULE load(const wchar_t* path, ITMPlugin*& plugin) {
     HMODULE module = LoadLibraryW(path); require(module != nullptr, "LoadLibrary");
     const auto factory = reinterpret_cast<Factory>(GetProcAddress(module, "TMPluginGetInstance"));
@@ -140,6 +154,16 @@ int wmain(int argc, wchar_t** argv) {
         auto c = nw::Check{}; c.id = nw::new_id(); c.target = L"192.0.2.1"; c.timeout_ms = 500;
         config.groups[0].checks.push_back(c);
         const auto config_path = directory / L"NetWatch.conf"; nw::save_config(config_path, config);
+        for (const unsigned short language : {static_cast<unsigned short>(0x419), static_cast<unsigned short>(0x409)}) {
+            LanguageHost host; host.language = language;
+            ITMPlugin* localized{}; auto localized_module = load(argv[1], localized);
+            localized->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, directory.c_str()); localized->OnInitialize(&host);
+            const bool russian = language == 0x419;
+            require(std::wstring(localized->GetTooltipInfo()).find(russian ? L"ещё не проверено" : L"not tested") != std::wstring::npos, "Actual DLL ignores host language");
+            require(std::wstring(localized->GetInfo(ITMPlugin::TMI_DESCRIPTION)).find(russian ? L"Группы" : L"Network") != std::wstring::npos, "Localized plugin description");
+            require(std::wstring(localized->GetItem(0)->GetItemName()) == config.groups[0].name, "Language switch renamed configured group");
+            FreeLibrary(localized_module);
+        }
         ITMPlugin* plugin{}; HMODULE module = load(argv[1], plugin);
         plugin->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, directory.c_str()); plugin->OnInitialize(nullptr);
         auto item = plugin->GetItem(0);

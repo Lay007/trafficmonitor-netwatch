@@ -3,6 +3,8 @@
 #include "resource.h"
 #include <commctrl.h>
 #include <stdexcept>
+#include <iomanip>
+#include <sstream>
 
 namespace nw {
 namespace {
@@ -12,13 +14,15 @@ struct Dialog {
     std::filesystem::path path;
     std::wstring load_error;
     Config draft;
+    const std::vector<Group> exported;
+    Language language{Language::English};
     HWND window{};
     int group{-1}, check{-1};
     bool filling{}, changed{};
     std::shared_ptr<ManualResult> manual;
     Check tested;
     std::wstring string(UINT id) const {
-        wchar_t text[1024]{}; LoadStringW(module, id, text, 1024); return text;
+        wchar_t text[1024]{}; LoadStringW(module, id + (language == Language::Russian ? 1000 : 0), text, 1024); return text;
     }
     void text(int id, const std::wstring& value) { SetDlgItemTextW(window, id, value.c_str()); }
     std::wstring text(int id) const {
@@ -52,8 +56,8 @@ struct Dialog {
             }
         }
         const auto limit = text(IDC_LIMIT);
-        draft.max_visible = limit == L"All" ? std::nullopt : std::optional<unsigned>(number(IDC_LIMIT, 4096));
-        const auto error = validate(draft);
+        draft.max_visible = limit == string(IDS_ALL) ? std::nullopt : std::optional<unsigned>(number(IDC_LIMIT, 4096));
+        const auto error = validate(draft, language);
         if (!error.empty()) throw std::runtime_error(utf8(error));
     }
     void fill_check() {
@@ -97,9 +101,10 @@ struct Dialog {
         filling = false; fill_group();
     }
     void initialize() {
-        for (const auto value : {L"All", L"0", L"1", L"2", L"4", L"8"}) SendDlgItemMessageW(window, IDC_LIMIT, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(value));
+        const auto all = string(IDS_ALL);
+        for (const auto value : {all.c_str(), L"0", L"1", L"2", L"4", L"8"}) SendDlgItemMessageW(window, IDC_LIMIT, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(value));
         for (const auto value : {L"ICMP", L"TCP", L"HTTP / HTTPS"}) SendDlgItemMessageW(window, IDC_CHECK_KIND, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(value));
-        text(IDC_LIMIT, draft.max_visible ? std::to_wstring(*draft.max_visible) : L"All");
+        text(IDC_LIMIT, draft.max_visible ? std::to_wstring(*draft.max_visible) : all);
         SendDlgItemMessageW(window, IDC_GROUP_NAME, EM_SETLIMITTEXT, 128, 0);
         SendDlgItemMessageW(window, IDC_GROUP_LABEL, EM_SETLIMITTEXT, 24, 0);
         SendDlgItemMessageW(window, IDC_CHECK_NAME, EM_SETLIMITTEXT, 128, 0);
@@ -131,20 +136,22 @@ struct Dialog {
         if (id != IDOK && id != IDC_GROUP_ADD && id != IDC_GROUP_UP && id != IDC_GROUP_DOWN && id != IDC_CHECK_ADD && id != IDC_TEST) return;
         capture();
         if (id == IDC_GROUP_ADD) {
-            Group g; g.id = new_id(); draft.groups.push_back(g); group = static_cast<int>(draft.groups.size()) - 1; check = -1; fill_groups();
+            Group g; g.id = new_id(); g.name = string(IDS_NEW_GROUP); draft.groups.push_back(g); group = static_cast<int>(draft.groups.size()) - 1; check = -1; fill_groups();
         } else if ((id == IDC_GROUP_UP || id == IDC_GROUP_DOWN) && group >= 0) {
             const int next = group + (id == IDC_GROUP_UP ? -1 : 1);
             if (next >= 0 && static_cast<size_t>(next) < draft.groups.size()) { std::swap(draft.groups[group], draft.groups[next]); group = next; fill_groups(); }
         } else if (id == IDC_CHECK_ADD && group >= 0) {
-            Check c; c.id = new_id(); auto& checks = draft.groups.at(group).checks; checks.push_back(c); check = static_cast<int>(checks.size()) - 1; fill_group();
+            Check c; c.id = new_id(); c.name = string(IDS_NEW_CHECK); auto& checks = draft.groups.at(group).checks; checks.push_back(c); check = static_cast<int>(checks.size()) - 1; fill_group();
         } else if (id == IDC_TEST && group >= 0 && check >= 0 && !manual) {
             tested = draft.groups.at(group).checks.at(check);
             auto output = std::make_shared<ManualResult>();
             if (!engine.manual(tested, output)) { text(IDC_RESULT, string(IDS_BUSY)); return; }
             manual = std::move(output); text(IDC_RESULT, string(IDS_RUNNING)); enable(IDC_TEST, false); SetTimer(window, 1, 100, nullptr);
         } else if (id == IDOK) {
-            save_config(path, draft); engine.apply(draft); changed = true;
-            MessageBoxW(window, string(IDS_RESTART).c_str(), L"NetWatch", MB_OK | MB_ICONINFORMATION);
+            try { save_config(path, draft); }
+            catch (const std::exception& error) { throw std::runtime_error(utf8(string(IDS_SAVE_ERROR)) + error.what()); }
+            engine.apply(draft); changed = true;
+            if (display_changed(exported, draft)) MessageBoxW(window, string(IDS_RESTART).c_str(), L"NetWatch", MB_OK | MB_ICONINFORMATION);
             EndDialog(window, IDOK);
         }
     }
@@ -152,10 +159,12 @@ struct Dialog {
         if (!manual) return;
         Result result;
         { std::lock_guard<std::mutex> lock(manual->mutex); if (!manual->done) return; result = manual->result; }
-        auto message = tested.name + L": " + error_text(result.error) + L"\r\n" + measurement(tested.kind) + L"=";
-        message += result.has_measurement ? std::to_wstring(result.milliseconds) + L" ms" : L"n/a";
+        std::wostringstream duration;
+        duration << std::fixed << std::setprecision(1) << result.milliseconds;
+        auto message = tested.name + L": " + error_text(result.error, language) + L"\r\n" + measurement(tested.kind, language) + L"=";
+        message += result.has_measurement ? duration.str() + translated(language, L" ms", L" мс") : translated(language, L"n/a", L"нет данных");
         if (result.http_status) message += L"; HTTP " + std::to_wstring(result.http_status);
-        if (result.code) message += L"; code=" + std::to_wstring(result.code);
+        if (result.code) message += translated(language, L"; code=", L"; код=") + std::to_wstring(result.code);
         text(IDC_RESULT, message);
         manual.reset(); KillTimer(window, 1); enable(IDC_TEST, check >= 0);
     }
@@ -178,13 +187,14 @@ INT_PTR CALLBACK procedure(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             SendDlgItemMessageW(window, IDC_CHECKS, LB_SETCURSEL, self->check, 0);
             MessageBoxW(window, wide(error.what()).c_str(), L"NetWatch", MB_OK | MB_ICONERROR);
         }
-    } catch (...) { MessageBoxW(window, L"Unexpected error", L"NetWatch", MB_OK | MB_ICONERROR); }
+    } catch (...) { MessageBoxW(window, self ? self->string(IDS_UNEXPECTED).c_str() : L"Unexpected error", L"NetWatch", MB_OK | MB_ICONERROR); }
     return FALSE;
 }
 }
-bool show_settings(HWND parent, HINSTANCE module, Engine& engine, const std::filesystem::path& path, const std::wstring& error) {
-    Dialog dialog{module, engine, path, error, engine.configuration()};
-    const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(IDD_SETTINGS), parent, procedure, reinterpret_cast<LPARAM>(&dialog));
+bool show_settings(HWND parent, HINSTANCE module, Engine& engine, const std::filesystem::path& path,
+    const std::wstring& error, const std::vector<Group>& exported, Language language) {
+    Dialog dialog{module, engine, path, error, engine.configuration(), exported, language};
+    const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(language == Language::Russian ? IDD_SETTINGS_RU : IDD_SETTINGS), parent, procedure, reinterpret_cast<LPARAM>(&dialog));
     if (result == -1) throw std::runtime_error("Cannot create NetWatch settings dialog");
     return dialog.changed;
 }
