@@ -2,6 +2,8 @@
 
 NetWatch is a Windows x64 C++ plugin for TrafficMonitor 1.86. It monitors user-defined groups of devices and services with ICMP, TCP and HTTP/HTTPS probes. Each selected group has a compact text label and a GDI-drawn status circle.
 
+See the [improvement and work plan](docs/roadmap.md) for priorities and acceptance criteria, and the [verification record](docs/verification.md) for actual results and remaining limits.
+
 | Circle | Meaning |
 | --- | --- |
 | Green | All enabled checks are Up |
