@@ -14,7 +14,17 @@ cmake --build --preset release
 ctest --preset release --output-on-failure
 ```
 
-Latest recorded run: **7/7 passed**, 25.42 seconds, on 2026-10-30 after the Save-notice and localization changes. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`.
+Latest full-suite run: **7/7 passed**, 25.68 seconds, on 2026-10-30 after adding offline help. After final help-wording corrections, the DLL/resources were rebuilt and the relevant settings test passed again (1.70 seconds total). Logs remain in the ignored `build/Testing/Temporary/LastTest.log`.
+
+### Offline help follow-up (2026-10-30)
+
+Both settings resources now expose a Help button. The button and `WM_HELP` (the F1 route) open a localized, read-only, scrollable help dialog using embedded resources. The seven sections cover setup, probe types, colors/hysteresis, timing/staleness/capacity, visibility/restart rules, manual testing/saving and error interpretation. No network request or configuration write is part of opening help.
+
+The settings test substitutes modal invocation with a hidden modeless instance of the real help resource/controller. It verifies English/Russian captions, the presence of the final help section, read-only/scrollbar styles, the F1 message route, and opening help with an unfinished numeric field without capturing edits or launching a probe. Actual desktop keyboard/scroll behavior and visual layout of the new help window were not inspected. The user-provided screenshot of the preceding settings build confirms Russian settings text is visible, but does not verify this help addition.
+
+The first build rejected `IDC_HELP` because Windows already defines that cursor identifier. The control was renamed `IDC_OPEN_HELP`. A test run accidentally launched after that failed build used the preceding executables and is not counted as evidence for help. The full-suite result above was obtained after a successful build.
+
+Current Release DLL SHA-256: `1d8829a34e6364faebdf191d2b877f76eb58399df7def731c55020b1f4563622`.
 
 ### Save notice and Russian UI follow-up (2026-10-30)
 
@@ -28,7 +38,7 @@ An intermediate test caught question marks in the generated Russian resource due
 
 Desktop inspection of the updated Russian dialog was attempted but unavailable: the computer-use helper returned `failed to connect native pipe` / Windows error 2 on the initial call, retry and retry after runtime reset. Automated resource/controller tests passed; visual clipping and desktop Save behavior of this updated DLL are not claimed as verified. The earlier English source-host GUI evidence below remains historical.
 
-Updated Release DLL SHA-256: `eafe5a3685671d94b01dd4aaec076ac1bddcc2036445630bf9c95b60b9c42ba5`.
+Save-notice/localization DLL SHA-256, before the help addition: `eafe5a3685671d94b01dd4aaec076ac1bddcc2036445630bf9c95b60b9c42ba5`.
 
 | Test | Actual coverage |
 | --- | --- |

@@ -42,9 +42,18 @@ BEGIN
     PUSHBUTTON "Test now (draft)", IDC_TEST, 506, 191, 134, 17
     LTEXT "Manual test result (does not change monitoring history)", -1, 194, 218, 446, 12
     EDITTEXT IDC_RESULT, 194, 234, 446, 76, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
-    LTEXT "Display changes require restarting TrafficMonitor. Monitoring changes apply on Save. Network tests run in the background; closing this window is safe.", IDC_NOTICE, 10, 328, 470, 40
+    LTEXT "Display changes require restarting TrafficMonitor. Monitoring changes apply on Save. Network tests run in the background; closing this window is safe.", IDC_NOTICE, 10, 328, 470, 24
+    PUSHBUTTON "Help", IDC_OPEN_HELP, 10, 353, 68, 19
     DEFPUSHBUTTON "Save", IDOK, 497, 353, 68, 19
     PUSHBUTTON "Cancel", IDCANCEL, 572, 353, 68, 19
+END
+IDD_HELP DIALOGEX 0, 0, 450, 280
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "NetWatch help"
+FONT 9, "Segoe UI"
+BEGIN
+    EDITTEXT IDC_HELP_TEXT, 10, 10, 430, 233, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON "Close", IDOK, 372, 251, 68, 19
 END
 STRINGTABLE
 BEGIN
@@ -58,6 +67,13 @@ BEGIN
     IDS_NEW_GROUP "New group"
     IDS_NEW_CHECK "New check"
     IDS_UNEXPECTED "Unexpected error"
+    IDS_HELP_START "GETTING STARTED\r\nA group combines checks into one taskbar indicator. Name identifies the group in settings; Label is drawn beside its circle. Select a group, add a check, set its type and destination, then Save. No public targets are added automatically."
+    IDS_HELP_PROBES "CHECK TYPES\r\nICMP: enter a host name or IP address without a URL scheme. Tests echo replies; some hosts block ICMP even when their services work. TCP: enter a host/IP and port (for example, 127.0.0.1 and 80). A successful connection means the port accepts connections, not that the application is healthy. HTTP/HTTPS: enter a full http:// or https:// URL. Sends GET and accepts only 2xx status codes; redirects are not followed. TLS certificate validation remains enabled."
+    IDS_HELP_COLORS "INDICATOR COLORS\r\nGreen: all enabled checks are Up. Yellow: some are Up and some are Down. Red: all enabled checks are Down. Gray: at least one enabled check has no current result, there are no enabled checks, or group monitoring is disabled. Three consecutive failures mark a check Down; one success restores Up. The first two failures before any success remain unknown. Disabled checks do not contribute."
+    IDS_HELP_TIMING "INTERVAL AND TIMEOUT\r\nInterval (1-86400 seconds) controls how often checks are scheduled. Timeout (100-30000 milliseconds) limits the probe's I/O budget. Defaults: 30 seconds and 2000 ms. OS/DNS callback cleanup may take longer. Stale results become gray: expiry is the larger of three intervals and one interval plus timeout. Both result freshness and last-success freshness matter. Work is limited to four active probes and four starts per second, including manual tests. Large configurations can run late and become gray."
+    IDS_HELP_DISPLAY "MONITORING AND DISPLAY\r\nMonitor this group controls probing. Show in taskbar and MaxVisibleGroups control which groups are exported to the host; hidden groups can still be monitored. All means no display limit; 0 hides every group. Changes to the effective indicator list, names, labels or order require restarting TrafficMonitor. Save shows a reminder only while these changes differ from the loaded layout. Enable new items in TrafficMonitor's taskbar display settings. Check-only edits apply on Save without a restart."
+    IDS_HELP_MANUAL "MANUAL TEST AND SAVING\r\nTest now (draft) checks the current edits without saving or changing monitoring history. Success here does not immediately turn the taskbar circle green. The result reports ICMP RTT, TCP connection time or HTTP response time through headers; n/a means no measurement. An HTTP error status can still have a response time. Save writes the configuration and applies monitoring changes, clearing previous monitoring results. Cancel discards unsaved edits. Closing either window does not cancel background work. Help is also available with F1 and works offline."
+    IDS_HELP_ERRORS "IF A CHECK FAILS\r\nDNS error: check the host name and name resolution. Connection refused: check the TCP port and whether a service listens there. Timeout: the host/service may be unreachable, filtered, or too slow for the chosen budget. TLS error: check the URL host, certificate trust and system time; certificate validation cannot be bypassed. HTTP error: inspect the returned status code. Raw numeric error codes are retained in results and tooltips. Existing saved names are user data and are not translated automatically."
 END
 
 #include "resources_ru.rc"
