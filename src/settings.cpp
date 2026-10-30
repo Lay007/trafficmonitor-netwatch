@@ -8,6 +8,15 @@
 
 namespace nw {
 namespace {
+INT_PTR CALLBACK help_procedure(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept {
+    if (message == WM_INITDIALOG) {
+        SetDlgItemTextW(window, IDC_HELP_TEXT, reinterpret_cast<const wchar_t*>(lparam)); return TRUE;
+    }
+    if (message == WM_CLOSE || (message == WM_COMMAND && (LOWORD(wparam) == IDOK || LOWORD(wparam) == IDCANCEL))) {
+        EndDialog(window, IDOK); return TRUE;
+    }
+    return FALSE;
+}
 struct Dialog {
     HINSTANCE module;
     Engine& engine;
@@ -23,6 +32,16 @@ struct Dialog {
     Check tested;
     std::wstring string(UINT id) const {
         wchar_t text[1024]{}; LoadStringW(module, id + (language == Language::Russian ? 1000 : 0), text, 1024); return text;
+    }
+    void help() const {
+        std::wstring content;
+        for (UINT id = IDS_HELP_START; id <= IDS_HELP_ERRORS; ++id) {
+            if (!content.empty()) content += L"\r\n\r\n";
+            content += string(id);
+        }
+        const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(language == Language::Russian ? IDD_HELP_RU : IDD_HELP),
+            window, help_procedure, reinterpret_cast<LPARAM>(content.c_str()));
+        if (result == -1) throw std::runtime_error("Cannot create NetWatch help dialog");
     }
     void text(int id, const std::wstring& value) { SetDlgItemTextW(window, id, value.c_str()); }
     std::wstring text(int id) const {
@@ -114,6 +133,7 @@ struct Dialog {
     }
     void command(int id, int notification) {
         if (filling) return;
+        if (id == IDC_OPEN_HELP && notification == BN_CLICKED) { help(); return; }
         if (id == IDCANCEL) { EndDialog(window, IDCANCEL); return; }
         if (id == IDC_CHECK_KIND && notification == CBN_SELCHANGE) {
             enable(IDC_CHECK_PORT, SendDlgItemMessageW(window, IDC_CHECK_KIND, CB_GETCURSEL, 0, 0) == static_cast<int>(Kind::Tcp)); return;
@@ -177,6 +197,7 @@ INT_PTR CALLBACK procedure(HWND window, UINT message, WPARAM wparam, LPARAM lpar
             SetWindowLongPtrW(window, DWLP_USER, reinterpret_cast<LONG_PTR>(self)); self->initialize(); return TRUE;
         }
         if (!self) return FALSE;
+        if (message == WM_HELP) { self->help(); return TRUE; }
         if (message == WM_COMMAND) { self->command(LOWORD(wparam), HIWORD(wparam)); return TRUE; }
         if (message == WM_TIMER) { self->poll(); return TRUE; }
         if (message == WM_CLOSE) { EndDialog(window, IDCANCEL); return TRUE; }

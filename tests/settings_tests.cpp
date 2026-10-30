@@ -3,15 +3,31 @@
 #include <string>
 #include <vector>
 static std::vector<std::wstring> notifications;
+static std::vector<std::wstring> help_titles, help_contents;
+static bool help_readonly{};
+static INT_PTR WINAPI inspect_help_dialog(HINSTANCE module, LPCWSTR resource, HWND parent, DLGPROC callback, LPARAM data);
 static int WINAPI record_message_box(HWND, LPCWSTR text, LPCWSTR, UINT) {
     notifications.emplace_back(text); return IDOK;
 }
 #define MessageBoxW record_message_box
+#define DialogBoxParamW inspect_help_dialog
 #include "../src/settings.cpp"
 #undef MessageBoxW
+#undef DialogBoxParamW
 #include <iostream>
 
 static void require(bool value, const char* message) { if (!value) throw std::runtime_error(message); }
+static INT_PTR WINAPI inspect_help_dialog(HINSTANCE module, LPCWSTR resource, HWND parent, DLGPROC callback, LPARAM data) {
+    HWND window = CreateDialogParamW(module, resource, parent, callback, data);
+    if (!window) return -1;
+    wchar_t title[128]{}; GetWindowTextW(window, title, 128); help_titles.emplace_back(title);
+    HWND text = GetDlgItem(window, IDC_HELP_TEXT);
+    std::wstring content(static_cast<size_t>(GetWindowTextLengthW(text)) + 1, 0);
+    GetWindowTextW(text, content.data(), static_cast<int>(content.size())); content.pop_back();
+    help_contents.push_back(std::move(content));
+    help_readonly = (GetWindowLongPtrW(text, GWL_STYLE) & (ES_READONLY | WS_VSCROLL)) == (ES_READONLY | WS_VSCROLL);
+    SendMessageW(window, WM_COMMAND, IDOK, 0); DestroyWindow(window); return IDOK;
+}
 int main() {
     try {
         {
@@ -22,6 +38,8 @@ int main() {
             HWND save_window = CreateDialogParamW(save.module, MAKEINTRESOURCEW(IDD_SETTINGS), nullptr, nw::procedure, reinterpret_cast<LPARAM>(&save));
             require(save_window != nullptr, "Create save regression dialog");
             require(save.text(IDOK) == L"Save" && save.text(IDC_LIMIT) == L"All", "Explicit English resource selection");
+            save.command(IDC_OPEN_HELP, BN_CLICKED);
+            require(help_titles.back() == L"NetWatch help" && help_contents.back().find(L"IF A CHECK FAILS") != std::wstring::npos && help_readonly, "English help resource and full scrollable content");
             save.command(IDC_CHECK_ADD, BN_CLICKED);
             save.command(IDOK, BN_CLICKED);
             require(save.changed && live.configuration().groups[0].checks.size() == 1, "Save applies new check");
@@ -34,6 +52,13 @@ int main() {
             wchar_t title[128]{}; GetWindowTextW(layout_window, title, 128);
             require(std::wstring(title) == L"Настройки NetWatch" && layout.text(IDOK) == L"Сохранить", "Russian dialog caption/buttons");
             require(layout.text(IDC_LIMIT) == L"Все", "Localized All selection");
+            layout.text(IDC_CHECK_TIMEOUT, L"unfinished");
+            layout.command(IDC_OPEN_HELP, BN_CLICKED);
+            require(help_titles.back() == L"Справка NetWatch" && help_contents.back().find(L"ЕСЛИ ПРОВЕРКА НЕ ПРОШЛА") != std::wstring::npos && help_readonly, "Russian help resource and full scrollable content");
+            require(layout.text(IDC_CHECK_TIMEOUT) == L"unfinished" && !layout.changed && live.active() == 0, "Help captured invalid draft or started probes");
+            const auto opened = help_contents.size(); SendMessageW(layout_window, WM_HELP, 0, 0);
+            require(help_contents.size() == opened + 1 && help_titles.back() == L"Справка NetWatch", "F1 help route");
+            layout.text(IDC_CHECK_TIMEOUT, L"2000");
             layout.text(IDC_GROUP_LABEL, L"ДОМ"); layout.command(IDOK, BN_CLICKED);
             require(layout.changed && notifications.size() == 1 && notifications.back().find(L"Перезапустите") != std::wstring::npos, "Display save must request restart in Russian");
             require(nw::load_config(save.path).groups[0].label == L"ДОМ", "Display save was not persisted");

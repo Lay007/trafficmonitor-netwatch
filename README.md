@@ -47,6 +47,8 @@ The VS 2022 commands are provided for portability; the recorded local verificati
 
 Edits are captured when switching selection, testing or saving. Cancel discards the draft. Delete affects the draft until Save. The native dialog follows TrafficMonitor's language: Russian and English are supported, with English as the fallback for other languages. See [localization](docs/localization.md).
 
+Click **Help** or press **F1** in settings for an offline guide covering setup, check types, indicator colors, timing, display/restart rules, manual testing and common errors. The guide uses the same language as settings, can be scrolled and copied, and opens without validating or saving unfinished edits.
+
 `MaxVisibleGroups` accepts `All` or 0-4096. Zero exports no indicators. Otherwise the first N groups with Show in taskbar selected are exported in configuration order. Hidden groups continue to run if monitoring is enabled. Each group and check has a persistent UUID independent of its name and position.
 
 **TrafficMonitor 1.86 enumerates plugin items only at startup.** Changing the effective visible item list, its order, names or labels requires a restart. Visibility and MaxVisibleGroups changes only require a restart when they affect that list. Save shows a restart notice only if the desired list differs from the items exported at load; reopening settings preserves that reminder until restart or until the original layout is restored. Existing item objects and their text remain valid until unload. Removed items turn gray until restart. Monitoring edits apply on Save and discard results from the previous configuration generation. TrafficMonitor's own item selection and ordering can further affect final presentation.
