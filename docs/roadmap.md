@@ -1,6 +1,6 @@
 # Improvement and work plan
 
-Updated: 2026-10-30. This is a prioritized work plan, not a release schedule or verification report. Check an item only after its acceptance criteria are met. Record test results, environment, artifact hashes and remaining limitations in [verification.md](verification.md). Proposed features below do not authorize installation, publication or changes to an installed host.
+Updated: 2026-11-02. This is a prioritized work plan, not a release schedule or verification report. Check an item only after its acceptance criteria are met. Record test results, environment, artifact hashes and remaining limitations in [verification.md](verification.md). Proposed features below do not authorize installation, publication or changes to an installed host.
 
 ## Completed baseline
 
@@ -11,8 +11,10 @@ Updated: 2026-10-30. This is a prioritized work plan, not a release schedule or 
 - [x] Russian/English UI selected from the host language, with English fallback.
 - [x] Restart notices based on the effective indicator layout exported at load, including pending changes after reopening settings.
 - [x] Offline help through the Help button and F1, with localized resources and controller tests.
+- [x] Empty localized LOCAL, WEB and SSH defaults on first launch, with an explicit additive action for existing configurations.
+- [x] Local OpenSSH Host import with preview/selection, duplicate handling and TCP-check conversion; unsupported routes and syntax are explained rather than executed.
 
-These items describe implemented behavior. They do not imply that every desktop, theme or network scenario has been verified. The last full automated run passed 7/7 tests; final help-wording changes were followed by a rebuild and the relevant settings test. Desktop inspection of the help window remains open.
+These items describe implemented behavior. They do not imply that every desktop, theme or network scenario has been verified. The last full automated run passed 8/8 tests. Russian settings and SSH preview were visually inspected in the standalone DLL host; the full theme/DPI matrix and desktop inspection of the help window remain open. SSH endpoint import is distinct from the proposed NetWatch configuration export/import below.
 
 ## P0: verification before a release candidate
 

@@ -41,7 +41,7 @@ static void core() {
     require(validate(invalid_ru, Language::Russian).find(L"Название группы") != std::wstring::npos, "Russian validation");
     Check untested;
     require(describe(untested, nullptr, Clock::now(), Language::Russian).find(L"ещё не проверено") != std::wstring::npos, "Russian tooltip");
-    Config c = initial_config();
+    Config c = initial_config(); c.groups.resize(1);
     const auto original = c.groups[0].id;
     Group second; second.id = new_id(); second.name = L"Second"; c.groups.push_back(second);
     c.groups[0].name = L"Renamed \u0441\u0435\u0442\u044c"; c.groups[0].label = L"\u0414\u041e\u041c";

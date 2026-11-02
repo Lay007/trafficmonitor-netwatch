@@ -26,10 +26,13 @@ MaxVisibleGroups is either All or a nonnegative integer. Visibility is independe
 
 - model: configuration, validation, stable UUIDs, freshness, failure hysteresis, aggregation.
 - config: versioned UTF-8 file, strict parsing, same-directory atomic replacement.
+- ssh_import: bounded local OpenSSH configuration reader, first-value/pattern evaluation, duplicate-safe conversion to TCP checks. It never starts ssh or executes configuration commands. Parsed candidates pass through an explicit localized preview and remain in the settings draft until Save. See [supported import behavior](ssh-import.md).
 - probes: Windows ICMP/ICMPv6, nonblocking Winsock TCP, async WinHTTP GET through headers. A shared deadline includes DNS and protocol work. Redirects are disabled; only 2xx succeeds. TLS uses Windows trust validation.
 - engine: short locks around snapshots and scheduling. At most four finite workers and four starts per second, no permanent scheduler. DataRequired only dispatches due work. Manual tests share both limits. Results from old configuration generations are discarded.
 - plugin: exact upstream ABI, immutable item list, GDI text/circle, plugin-wide tooltip.
 - settings: one native modal dialog, editable local configuration copy, explicit save and manual probe. Russian or English resources are selected from the host language at initialization. Save compares the desired visible IDs, names and labels with the immutable startup snapshot before showing a restart notice.
+
+First launch uses three empty default groups (LOCAL, WEB, SSH), localized after the host supplies its language and before item enumeration. A successfully loaded file is never supplemented automatically. The Default groups action adds missing labels case-insensitively to a copy of the draft, validates it and preserves existing objects' UUIDs. SSH import similarly validates a candidate copy before replacing the draft. Neither action updates the engine or writes the active file until Save.
 
 ## Lifetime
 

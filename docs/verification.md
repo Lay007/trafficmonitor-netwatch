@@ -1,6 +1,6 @@
 # Verification record
 
-Updated: 2026-10-30. No installed TrafficMonitor or IPRegionMon files were changed. The original 2026-10-29 integration observations below describe the earlier DLL. The initial six commits were subsequently pushed to the user-created GitHub repository; this follow-up remains local and is not deployed.
+Updated: 2026-11-02. This work did not modify installed TrafficMonitor or IPRegionMon files. The original 2026-10-29 integration observations below describe an earlier DLL. Repository publication and installed-host deployment are separate from the local follow-ups recorded here.
 
 ## Build and automated tests
 
@@ -14,7 +14,21 @@ cmake --build --preset release
 ctest --preset release --output-on-failure
 ```
 
-Latest full-suite run: **7/7 passed**, 25.68 seconds, on 2026-10-30 after adding offline help. After final help-wording corrections, the DLL/resources were rebuilt and the relevant settings test passed again (1.70 seconds total). Logs remain in the ignored `build/Testing/Temporary/LastTest.log`.
+Latest full-suite run: **8/8 passed**, 25.85 seconds, on 2026-11-02 after adding OpenSSH import and default groups. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`. The preceding help follow-up passed 7/7 tests (25.68 seconds), followed by a rebuild and the relevant settings test after final wording changes.
+
+### OpenSSH import and default groups (2026-11-02)
+
+Added bounded local OpenSSH parsing and a Russian/English import preview. The operation creates selected TCP checks in a draft, skips unsupported routes and duplicates, and requires normal Save to apply. First launch uses three empty localized groups; existing saved configurations are not supplemented automatically.
+
+New `ssh_import` coverage: BOM/CRLF, quoting/comments, `=` syntax, aliases/patterns/negation, first-value precedence, Include ordering and parent-state restoration, inactive conditional Includes, IPv6/percent tokens, default/invalid ports, skipped proxy/canonicalization/dynamic values, rejected Match/cycles/malformed inputs, repeat imports preserving IDs, configuration round trips, an old single-group file remaining unchanged, and atomic rejection when the check limit is full. Existing tests that specifically exercise a single group now explicitly construct a one-group fixture; separate tests assert the new three-group production default.
+
+The real settings-controller test exercises chooser cancellation, preview cancellation, destination defaults, selecting a subset, refusing a user-checked skipped row, repeated imports, additive default groups, no live/file changes before Save, and persistence after Save. File chooser/modal invocation is substituted with controlled test fixtures; the actual native preview resources, list view and controllers are used. The ABI host separately verifies three default items in Russian, no automatic file write and preservation of a saved one-group layout.
+
+An independent `ssh -G -F` experiment on synthetic fixtures confirmed case-sensitive Host matching and first-value behavior in Windows OpenSSH. Its Include comparison was blocked by OpenSSH's `Bad owner or permissions` check on the disposable include file; no ACLs were changed and that run is not counted as a successful comparison. Reviewing upstream readconf.c revealed that Include restores the parent's Host state between files; the parser and a regression test explicitly enforce this. The plugin itself never invokes ssh or executes configuration commands.
+
+The computer-use helper was available in this session. Visual inspection of the standalone DLL host confirmed the three Russian default groups, both new settings buttons, and the import preview's destination group, checkboxes and resolved alias/address/port columns. No obvious clipping was observed at that desktop configuration; a full DPI/theme matrix was not tested. A preview of an existing user-selected SSH file was visible, but its addresses and screenshots are not retained in public evidence. The preview process subsequently exited. These observations concern the standalone test host, not a pristine TrafficMonitor GUI certification; automated tests remain the evidence for controlled cancellation/Save scenarios.
+
+Current Release DLL SHA-256: `cf0c598117e67e7580dd9991325760e8d172d4e0c9a9cd69a2a9ad097cd5f712`.
 
 ### Offline help follow-up (2026-10-30)
 
@@ -24,7 +38,7 @@ The settings test substitutes modal invocation with a hidden modeless instance o
 
 The first build rejected `IDC_HELP` because Windows already defines that cursor identifier. The control was renamed `IDC_OPEN_HELP`. A test run accidentally launched after that failed build used the preceding executables and is not counted as evidence for help. The full-suite result above was obtained after a successful build.
 
-Current Release DLL SHA-256: `1d8829a34e6364faebdf191d2b877f76eb58399df7def731c55020b1f4563622`.
+Help follow-up DLL SHA-256, before SSH import/default groups: `1d8829a34e6364faebdf191d2b877f76eb58399df7def731c55020b1f4563622`.
 
 ### Save notice and Russian UI follow-up (2026-10-30)
 
@@ -44,6 +58,7 @@ Save-notice/localization DLL SHA-256, before the help addition: `eafe5a3685671d9
 | --- | --- |
 | settings | Hidden real dialog resource/controller: add, rename, reorder, delete, stable IDs, checks, independent visibility/monitoring, zero display limit, numeric validation, manual draft result polling, destroy dialog during pending ICMP |
 | core | Group/check IDs, order and visibility limits, UTF-8/Unicode and Windows BOM/CRLF config round trips, atomic rejection of invalid saves, malformed config rejection, three-failure debounce, one-success recovery, stale-green expiry, mixed/disabled/empty/unknown aggregation |
+| ssh_import | Bounded OpenSSH reading, supported matching/precedence/Include behavior, unsupported syntax/routes, duplicate-safe TCP conversion, localized empty defaults and preservation of existing configurations |
 | plugin_host | Actual LoadLibrary/GetProcAddress export, singleton, API v7 virtual slots, item boundaries/IDs, GDI calls, concurrent getter calls, returned-pointer stability, release during a probe, eventual unload, 100 reloads and handle/GDI counts |
 | render_and_layout | Actual DLL probes produce green/yellow/red/gray circles, checked by GDI bitmap pixels; item pointer and ID remain stable until unload; zero visible groups applies after reload |
 | network | Open/refused IPv4 TCP, IPv6 TCP, IPv4/IPv6 ICMP success, invalid-name DNS failure, explicit TEST-NET ICMP timeout, HTTP 200/503/302, total HTTP timeout, untrusted TLS rejection, no TLS downgrade, 256 hidden groups with four-worker cap, config edits during blocked requests, obsolete-result rejection, eight concurrent readers, manual testing |

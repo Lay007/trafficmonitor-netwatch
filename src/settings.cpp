@@ -1,13 +1,107 @@
 #include "settings.h"
 #include "config.h"
 #include "resource.h"
+#include "ssh_import.h"
 #include <commctrl.h>
+#include <commdlg.h>
 #include <stdexcept>
 #include <iomanip>
 #include <sstream>
 
 namespace nw {
 namespace {
+std::wstring resource_string(HINSTANCE module, Language language, UINT id) {
+    wchar_t text[1024]{}; LoadStringW(module, id + (language == Language::Russian ? 1000 : 0), text, 1024); return text;
+}
+std::filesystem::path user_home() {
+    const auto length = GetEnvironmentVariableW(L"USERPROFILE", nullptr, 0);
+    if (!length) throw std::runtime_error("USERPROFILE is unavailable");
+    std::wstring value(length, 0);
+    const auto copied = GetEnvironmentVariableW(L"USERPROFILE", value.data(), length);
+    if (!copied || copied >= length) throw std::runtime_error("Cannot read USERPROFILE");
+    value.resize(copied); return value;
+}
+struct SshDialog {
+    HINSTANCE module;
+    Language language;
+    Config config;
+    std::filesystem::path path;
+    std::vector<SshHost> hosts;
+    HWND window{};
+    int group{-1};
+    bool accepted{};
+    std::vector<SshIssue> issues;
+    void refresh() {
+        const auto index = static_cast<size_t>(SendDlgItemMessageW(window, IDC_SSH_GROUP, CB_GETCURSEL, 0, 0));
+        issues = ssh_import_status(index < config.groups.size() ? config.groups[index] : Group{}, hosts);
+        HWND list = GetDlgItem(window, IDC_SSH_HOSTS); ListView_DeleteAllItems(list);
+        for (size_t i = 0; i < hosts.size(); ++i) {
+            LVITEMW item{}; item.mask = LVIF_TEXT; item.iItem = static_cast<int>(i); item.pszText = const_cast<wchar_t*>(hosts[i].alias.c_str());
+            ListView_InsertItem(list, &item);
+            ListView_SetItemText(list, item.iItem, 1, const_cast<wchar_t*>(hosts[i].target.c_str()));
+            auto port = std::to_wstring(hosts[i].port); ListView_SetItemText(list, item.iItem, 2, port.data());
+            ListView_SetItemText(list, item.iItem, 3, const_cast<wchar_t*>(ssh_issue_text(issues[i], language)));
+            ListView_SetCheckState(list, item.iItem, issues[i] == SshIssue::None);
+        }
+    }
+    void initialize() {
+        SetDlgItemTextW(window, IDC_SSH_PATH, path.c_str());
+        HWND list = GetDlgItem(window, IDC_SSH_HOSTS);
+        ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+        RECT bounds{}; GetClientRect(list, &bounds);
+        const wchar_t* titles[] = {
+            translated(language, L"Host alias", L"Псевдоним Host"), translated(language, L"Address", L"Адрес"),
+            translated(language, L"Port", L"Порт"), translated(language, L"Import status", L"Статус импорта")
+        };
+        const int widths[] = {20, 32, 8, 40};
+        for (int i = 0; i < 4; ++i) {
+            LVCOLUMNW column{}; column.mask = LVCF_TEXT | LVCF_WIDTH; column.pszText = const_cast<wchar_t*>(titles[i]);
+            column.cx = (bounds.right - 24) * widths[i] / 100; ListView_InsertColumn(list, i, &column);
+        }
+        for (size_t i = 0; i < config.groups.size(); ++i) {
+            SendDlgItemMessageW(window, IDC_SSH_GROUP, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(config.groups[i].name.c_str()));
+            if (CompareStringOrdinal(config.groups[i].label.c_str(), -1, L"SSH", -1, TRUE) == CSTR_EQUAL) group = static_cast<int>(i);
+        }
+        const auto label = resource_string(module, language, IDS_SSH_NEW_GROUP);
+        SendDlgItemMessageW(window, IDC_SSH_GROUP, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(label.c_str()));
+        if (group < 0) group = static_cast<int>(config.groups.size());
+        SendDlgItemMessageW(window, IDC_SSH_GROUP, CB_SETCURSEL, group, 0); refresh();
+    }
+    void apply() {
+        std::vector<SshHost> selected;
+        for (size_t i = 0; i < hosts.size(); ++i)
+            if (issues[i] == SshIssue::None && ListView_GetCheckState(GetDlgItem(window, IDC_SSH_HOSTS), static_cast<int>(i))) selected.push_back(hosts[i]);
+        if (selected.empty()) {
+            MessageBoxW(window, resource_string(module, language, IDS_SSH_NONE).c_str(), L"NetWatch", MB_OK | MB_ICONINFORMATION); return;
+        }
+        auto next = config;
+        group = static_cast<int>(SendDlgItemMessageW(window, IDC_SSH_GROUP, CB_GETCURSEL, 0, 0));
+        if (group < 0 || static_cast<size_t>(group) > next.groups.size()) throw std::runtime_error("Select an SSH import group");
+        if (static_cast<size_t>(group) == next.groups.size()) {
+            Group added; added.id = new_id(); added.name = added.label = L"SSH"; next.groups.push_back(std::move(added));
+        }
+        append_ssh_hosts(next, next.groups.at(group).id, selected);
+        config = std::move(next); accepted = true; EndDialog(window, IDOK);
+    }
+};
+INT_PTR CALLBACK ssh_procedure(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept {
+    auto* self = reinterpret_cast<SshDialog*>(GetWindowLongPtrW(window, DWLP_USER));
+    try {
+        if (message == WM_INITDIALOG) {
+            self = reinterpret_cast<SshDialog*>(lparam); self->window = window;
+            SetWindowLongPtrW(window, DWLP_USER, reinterpret_cast<LONG_PTR>(self)); self->initialize(); return TRUE;
+        }
+        if (!self) return FALSE;
+        if (message == WM_COMMAND) {
+            if (LOWORD(wparam) == IDCANCEL) { EndDialog(window, IDCANCEL); return TRUE; }
+            if (LOWORD(wparam) == IDOK) { self->apply(); return TRUE; }
+            if (LOWORD(wparam) == IDC_SSH_GROUP && HIWORD(wparam) == CBN_SELCHANGE) { self->refresh(); return TRUE; }
+        }
+        if (message == WM_CLOSE) { EndDialog(window, IDCANCEL); return TRUE; }
+    } catch (const std::exception& error) { MessageBoxW(window, wide(error.what()).c_str(), L"NetWatch", MB_OK | MB_ICONERROR); }
+    catch (...) { MessageBoxW(window, L"Unexpected error", L"NetWatch", MB_OK | MB_ICONERROR); }
+    return FALSE;
+}
 INT_PTR CALLBACK help_procedure(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept {
     if (message == WM_INITDIALOG) {
         SetDlgItemTextW(window, IDC_HELP_TEXT, reinterpret_cast<const wchar_t*>(lparam)); return TRUE;
@@ -31,17 +125,37 @@ struct Dialog {
     std::shared_ptr<ManualResult> manual;
     Check tested;
     std::wstring string(UINT id) const {
-        wchar_t text[1024]{}; LoadStringW(module, id + (language == Language::Russian ? 1000 : 0), text, 1024); return text;
+        return resource_string(module, language, id);
     }
     void help() const {
         std::wstring content;
-        for (UINT id = IDS_HELP_START; id <= IDS_HELP_ERRORS; ++id) {
+        for (UINT id = IDS_HELP_START; id <= IDS_HELP_DEFAULTS; ++id) {
             if (!content.empty()) content += L"\r\n\r\n";
             content += string(id);
         }
         const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(language == Language::Russian ? IDD_HELP_RU : IDD_HELP),
             window, help_procedure, reinterpret_cast<LPARAM>(content.c_str()));
         if (result == -1) throw std::runtime_error("Cannot create NetWatch help dialog");
+    }
+    void import_ssh() {
+        const auto home = user_home();
+        wchar_t filename[32768]{};
+        const auto initial = home / L".ssh" / L"config";
+        if (initial.wstring().size() < 32768) wcscpy_s(filename, initial.c_str());
+        const auto title = string(IDS_SSH_SELECT);
+        OPENFILENAMEW picker{}; picker.lStructSize = sizeof(picker); picker.hwndOwner = window;
+        picker.lpstrFile = filename; picker.nMaxFile = 32768; picker.lpstrTitle = title.c_str();
+        picker.lpstrFilter = translated(language, L"OpenSSH config\0config;*.conf\0All files\0*.*\0\0", L"Конфигурация OpenSSH\0config;*.conf\0Все файлы\0*.*\0\0");
+        picker.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+        if (!GetOpenFileNameW(&picker)) return;
+        auto hosts = read_ssh_config(filename, home);
+        if (hosts.empty()) { text(IDC_RESULT, string(IDS_SSH_EMPTY)); return; }
+        SshDialog preview{module, language, draft, filename, std::move(hosts)};
+        INITCOMMONCONTROLSEX controls{sizeof(controls), ICC_LISTVIEW_CLASSES}; InitCommonControlsEx(&controls);
+        const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(language == Language::Russian ? IDD_SSH_IMPORT_RU : IDD_SSH_IMPORT),
+            window, ssh_procedure, reinterpret_cast<LPARAM>(&preview));
+        if (result == -1) throw std::runtime_error("Cannot create SSH import preview");
+        if (preview.accepted) { draft = std::move(preview.config); group = preview.group; check = -1; fill_groups(); text(IDC_RESULT, string(IDS_SSH_ADDED)); }
     }
     void text(int id, const std::wstring& value) { SetDlgItemTextW(window, id, value.c_str()); }
     std::wstring text(int id) const {
@@ -153,9 +267,14 @@ struct Dialog {
         if (id == IDC_CHECK_DELETE && group >= 0 && check >= 0) {
             auto& checks = draft.groups.at(group).checks; checks.erase(checks.begin() + check); fill_group(); return;
         }
-        if (id != IDOK && id != IDC_GROUP_ADD && id != IDC_GROUP_UP && id != IDC_GROUP_DOWN && id != IDC_CHECK_ADD && id != IDC_TEST) return;
+        if (id != IDOK && id != IDC_GROUP_ADD && id != IDC_GROUP_UP && id != IDC_GROUP_DOWN && id != IDC_CHECK_ADD && id != IDC_TEST && id != IDC_IMPORT_SSH && id != IDC_DEFAULT_GROUPS) return;
         capture();
-        if (id == IDC_GROUP_ADD) {
+        if (id == IDC_DEFAULT_GROUPS) {
+            add_default_groups(draft, language); fill_groups(); text(IDC_RESULT, string(IDS_DEFAULTS_ADDED));
+        } else if (id == IDC_IMPORT_SSH) {
+            try { import_ssh(); }
+            catch (const std::exception& error) { throw std::runtime_error(utf8(string(IDS_SSH_ERROR)) + error.what()); }
+        } else if (id == IDC_GROUP_ADD) {
             Group g; g.id = new_id(); g.name = string(IDS_NEW_GROUP); draft.groups.push_back(g); group = static_cast<int>(draft.groups.size()) - 1; check = -1; fill_groups();
         } else if ((id == IDC_GROUP_UP || id == IDC_GROUP_DOWN) && group >= 0) {
             const int next = group + (id == IDC_GROUP_UP ? -1 : 1);

@@ -93,6 +93,7 @@ static void http_lifetime(const wchar_t* dll, const std::filesystem::path& direc
     HANDLE request_started = CreateEventW(nullptr, FALSE, FALSE, event_name.c_str());
     require(request_started != nullptr, "Create HTTP synchronization event");
     auto config = nw::initial_config();
+    config.groups.resize(1);
     config.groups[0].visible = false;
     for (int i = 0; i < 256; ++i) {
         nw::Check check; check.id = nw::new_id(); check.kind = nw::Kind::Http;
@@ -151,9 +152,20 @@ int wmain(int argc, wchar_t** argv) {
             plugin->ShowOptionsDialog(nullptr); FreeLibrary(module); return 0;
         }
         nw::Config config = nw::initial_config();
+        config.groups.resize(1);
         auto c = nw::Check{}; c.id = nw::new_id(); c.target = L"192.0.2.1"; c.timeout_ms = 500;
         config.groups[0].checks.push_back(c);
         const auto config_path = directory / L"NetWatch.conf"; nw::save_config(config_path, config);
+        {
+            LanguageHost russian;
+            ITMPlugin* fresh{}; auto fresh_module = load(argv[1], fresh);
+            const auto fresh_dir = directory / nw::new_id();
+            fresh->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, fresh_dir.c_str()); fresh->OnInitialize(&russian);
+            require(fresh->GetItem(2) && !fresh->GetItem(3), "First launch must export three default groups");
+            require(std::wstring(fresh->GetItem(0)->GetItemName()) == L"Локальные устройства" && std::wstring(fresh->GetItem(2)->GetItemName()) == L"SSH", "Fresh groups do not follow host language");
+            require(!std::filesystem::exists(fresh_dir), "First launch wrote configuration automatically");
+            FreeLibrary(fresh_module);
+        }
         for (const unsigned short language : {static_cast<unsigned short>(0x419), static_cast<unsigned short>(0x409)}) {
             LanguageHost host; host.language = language;
             ITMPlugin* localized{}; auto localized_module = load(argv[1], localized);

@@ -45,7 +45,8 @@ struct History {
     bool ever_succeeded{}, has_result{};
 };
 std::wstring new_id();
-Config initial_config();
+Config initial_config(Language language = Language::English);
+size_t add_default_groups(Config& config, Language language);
 std::wstring validate(const Config& config, Language language = Language::English);
 std::vector<Group> visible_groups(const Config& config);
 bool display_changed(const std::vector<Group>& exported, const Config& desired);

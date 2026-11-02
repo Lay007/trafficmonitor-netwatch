@@ -1,25 +1,48 @@
 // Compile the real dialog controller into an isolated hidden test process.
 #include <Windows.h>
+#include <commdlg.h>
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
 static std::vector<std::wstring> notifications;
 static std::vector<std::wstring> help_titles, help_contents;
 static bool help_readonly{};
+static std::filesystem::path ssh_fixture;
+static bool cancel_picker{}, cancel_preview{}, ssh_preview_seen{};
+static BOOL WINAPI inspect_file_picker(LPOPENFILENAMEW picker) {
+    if (cancel_picker) return FALSE;
+    wcscpy_s(picker->lpstrFile, picker->nMaxFile, ssh_fixture.c_str()); return TRUE;
+}
 static INT_PTR WINAPI inspect_help_dialog(HINSTANCE module, LPCWSTR resource, HWND parent, DLGPROC callback, LPARAM data);
 static int WINAPI record_message_box(HWND, LPCWSTR text, LPCWSTR, UINT) {
     notifications.emplace_back(text); return IDOK;
 }
 #define MessageBoxW record_message_box
 #define DialogBoxParamW inspect_help_dialog
+#define GetOpenFileNameW inspect_file_picker
 #include "../src/settings.cpp"
 #undef MessageBoxW
 #undef DialogBoxParamW
+#undef GetOpenFileNameW
 #include <iostream>
 
 static void require(bool value, const char* message) { if (!value) throw std::runtime_error(message); }
 static INT_PTR WINAPI inspect_help_dialog(HINSTANCE module, LPCWSTR resource, HWND parent, DLGPROC callback, LPARAM data) {
     HWND window = CreateDialogParamW(module, resource, parent, callback, data);
     if (!window) return -1;
+    const auto id = reinterpret_cast<ULONG_PTR>(resource);
+    if (id == IDD_SSH_IMPORT || id == IDD_SSH_IMPORT_RU) {
+        ssh_preview_seen = true;
+        require(ListView_GetItemCount(GetDlgItem(window, IDC_SSH_HOSTS)) == 3, "Real SSH preview rows");
+        auto* preview = reinterpret_cast<nw::SshDialog*>(data);
+        require(preview->issues[1] == nw::SshIssue::Proxy, "Preview missing proxy explanation");
+        ListView_SetCheckState(GetDlgItem(window, IDC_SSH_HOSTS), 2, FALSE);
+        // Even a user-checked skipped row must not be imported.
+        ListView_SetCheckState(GetDlgItem(window, IDC_SSH_HOSTS), 1, TRUE);
+        SendMessageW(window, WM_COMMAND, cancel_preview ? IDCANCEL : IDOK, 0);
+        DestroyWindow(window); return cancel_preview ? IDCANCEL : IDOK;
+    }
     wchar_t title[128]{}; GetWindowTextW(window, title, 128); help_titles.emplace_back(title);
     HWND text = GetDlgItem(window, IDC_HELP_TEXT);
     std::wstring content(static_cast<size_t>(GetWindowTextLengthW(text)) + 1, 0);
@@ -82,7 +105,8 @@ int main() {
             DestroyWindow(restarted_window);
             std::filesystem::remove_all(folder);
         }
-        nw::Engine engine(nw::initial_config());
+        auto editing = nw::initial_config(); editing.groups.resize(1);
+        nw::Engine engine(editing);
         nw::Dialog dialog{GetModuleHandleW(nullptr), engine, {}, {}, engine.configuration(), nw::visible_groups(engine.configuration())};
         HWND window = CreateDialogParamW(dialog.module, MAKEINTRESOURCEW(IDD_SETTINGS), nullptr, nw::procedure, reinterpret_cast<LPARAM>(&dialog));
         require(window != nullptr, "Create real dialog resource");
@@ -116,6 +140,33 @@ int main() {
         DestroyWindow(window); require(!dialog.manual, "Dialog retained manual state after destruction");
         for (int i = 0; i < 200 && engine.active(); ++i) Sleep(10);
         require(engine.active() == 0, "Pending dialog probe did not drain");
+        {
+            const auto folder = std::filesystem::temp_directory_path() / nw::new_id();
+            std::filesystem::create_directories(folder); ssh_fixture = folder / L"ssh-config";
+            { std::ofstream file(ssh_fixture); file << "Host imported-a\n HostName 192.0.2.40\n Port 2222\nHost jump\n ProxyJump gateway\nHost imported-b\n HostName 192.0.2.41\n"; }
+            auto one = nw::initial_config(); one.groups.resize(1); one.groups[0].name = L"Custom local";
+            nw::Engine import_engine(one);
+            nw::Dialog imports{GetModuleHandleW(nullptr), import_engine, folder / L"NetWatch.conf", {}, one, nw::visible_groups(one), nw::Language::Russian};
+            HWND import_window = CreateDialogParamW(imports.module, MAKEINTRESOURCEW(IDD_SETTINGS_RU), nullptr, nw::procedure, reinterpret_cast<LPARAM>(&imports));
+            require(import_window != nullptr, "Create import settings");
+            const auto local_id = imports.draft.groups[0].id;
+            imports.command(IDC_DEFAULT_GROUPS, BN_CLICKED); imports.command(IDC_DEFAULT_GROUPS, BN_CLICKED);
+            require(imports.draft.groups.size() == 3 && imports.draft.groups[0].id == local_id && imports.draft.groups[0].name == L"Custom local", "UI defaults are additive and repeatable");
+            require(import_engine.configuration().groups.size() == 1, "Default button changed live configuration");
+            cancel_picker = true; imports.command(IDC_IMPORT_SSH, BN_CLICKED);
+            require(!ssh_preview_seen && imports.draft.groups[2].checks.empty(), "Canceled picker changed draft");
+            cancel_picker = false; cancel_preview = true; imports.command(IDC_IMPORT_SSH, BN_CLICKED);
+            require(ssh_preview_seen && imports.draft.groups[2].checks.empty(), "Canceled preview changed draft");
+            cancel_preview = false; imports.command(IDC_IMPORT_SSH, BN_CLICKED);
+            require(imports.draft.groups[2].checks.size() == 1 && imports.draft.groups[2].checks[0].name == L"imported-a" && imports.draft.groups[2].checks[0].port == 2222, "Selected TCP hosts did not reach draft");
+            require(import_engine.configuration().groups.size() == 1 && !std::filesystem::exists(imports.path), "Import wrote/applied before Save");
+            const auto imported_id = imports.draft.groups[2].checks[0].id;
+            imports.command(IDC_IMPORT_SSH, BN_CLICKED);
+            require(imports.draft.groups[2].checks.size() == 1 && imports.draft.groups[2].checks[0].id == imported_id, "UI reimport duplicated or replaced check");
+            imports.command(IDOK, BN_CLICKED);
+            require(import_engine.configuration().groups[2].checks.size() == 1 && nw::load_config(imports.path).groups[2].checks[0].id == imported_id, "Import Save lost TCP check/identity");
+            DestroyWindow(import_window); std::filesystem::remove_all(folder);
+        }
         std::cout << "PASS real settings controller: group/check editing, ordering, IDs, limit, validation, draft tests and close during probe\n";
         return 0;
     } catch (const std::exception& e) { std::cerr << "FAIL settings: " << e.what() << '\n'; return 1; }

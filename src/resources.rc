@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <commctrl.h>
 #include "resource.h"
 #pragma code_page(65001)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -44,8 +45,23 @@ BEGIN
     EDITTEXT IDC_RESULT, 194, 234, 446, 76, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
     LTEXT "Display changes require restarting TrafficMonitor. Monitoring changes apply on Save. Network tests run in the background; closing this window is safe.", IDC_NOTICE, 10, 328, 470, 24
     PUSHBUTTON "Help", IDC_OPEN_HELP, 10, 353, 68, 19
+    PUSHBUTTON "Import SSH...", IDC_IMPORT_SSH, 84, 353, 90, 19
+    PUSHBUTTON "Default groups", IDC_DEFAULT_GROUPS, 180, 353, 100, 19
     DEFPUSHBUTTON "Save", IDOK, 497, 353, 68, 19
     PUSHBUTTON "Cancel", IDCANCEL, 572, 353, 68, 19
+END
+IDD_SSH_IMPORT DIALOGEX 0, 0, 560, 300
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Import OpenSSH hosts"
+FONT 9, "Segoe UI"
+BEGIN
+    EDITTEXT IDC_SSH_PATH, 10, 10, 540, 15, ES_READONLY | ES_AUTOHSCROLL
+    LTEXT "Add to group", -1, 10, 36, 90, 12
+    COMBOBOX IDC_SSH_GROUP, 108, 33, 300, 100, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL "", IDC_SSH_HOSTS, "SysListView32", LVS_REPORT | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 10, 58, 540, 177
+    LTEXT "Select the ready hosts using checkboxes. Adds TCP port checks only, without SSH login or keys. Skipped and duplicate rows are not imported. Save in settings to apply; Cancel discards the import.", -1, 10, 242, 540, 26
+    DEFPUSHBUTTON "Add selected", IDOK, 382, 273, 90, 17
+    PUSHBUTTON "Cancel", IDCANCEL, 480, 273, 70, 17
 END
 IDD_HELP DIALOGEX 0, 0, 450, 280
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
@@ -67,6 +83,15 @@ BEGIN
     IDS_NEW_GROUP "New group"
     IDS_NEW_CHECK "New check"
     IDS_UNEXPECTED "Unexpected error"
+    IDS_HELP_SSH "IMPORTING SSH HOSTS\r\nImport SSH reads a selected OpenSSH config file; the default location is your Windows profile's .ssh/config. Preview the resolved Host aliases, addresses and ports, choose a destination group and select rows to add. Only TCP port checks are created: no SSH authentication, keys or commands. Port defaults to 22. Host patterns and first-value precedence are respected. Include supports literal paths and file-name wildcards; relative paths use your profile's .ssh directory. Match is rejected. ProxyJump/ProxyCommand hosts and unsupported hostname expansions are skipped. Reimporting the same alias or endpoint in a group does not overwrite or duplicate it. Changes stay in the draft until Save."
+    IDS_HELP_DEFAULTS "DEFAULT GROUPS\r\nFirst launch without a saved file creates empty LOCAL, WEB and SSH groups, with localized names. No targets are added. Default groups adds missing labels to the draft and preserves existing groups, checks and IDs, including renamed groups that retain these labels. Cancel discards these additions; Save persists them. Changes to the exported indicator list take effect after restarting TrafficMonitor."
+    IDS_SSH_SELECT "Select an OpenSSH config file"
+    IDS_SSH_NEW_GROUP "Create a new SSH group"
+    IDS_SSH_EMPTY "No literal Host aliases found. Wildcard-only Host sections supply defaults, but cannot enumerate hosts."
+    IDS_SSH_NONE "Select at least one ready host. Skipped and duplicate rows cannot be imported."
+    IDS_SSH_ADDED "SSH hosts added to the draft as TCP checks. Review them and Save to begin monitoring, or Cancel to discard."
+    IDS_DEFAULTS_ADDED "Missing default groups were added to the draft. Existing labels, groups and checks were preserved. Save to keep changes."
+    IDS_SSH_ERROR "Cannot import OpenSSH configuration: "
     IDS_HELP_START "GETTING STARTED\r\nA group combines checks into one taskbar indicator. Name identifies the group in settings; Label is drawn beside its circle. Select a group, add a check, set its type and destination, then Save. No public targets are added automatically."
     IDS_HELP_PROBES "CHECK TYPES\r\nICMP: enter a host name or IP address without a URL scheme. Tests echo replies; some hosts block ICMP even when their services work. TCP: enter a host/IP and port (for example, 127.0.0.1 and 80). A successful connection means the port accepts connections, not that the application is healthy. HTTP/HTTPS: enter a full http:// or https:// URL. Sends GET and accepts only 2xx status codes; redirects are not followed. TLS certificate validation remains enabled."
     IDS_HELP_COLORS "INDICATOR COLORS\r\nGreen: all enabled checks are Up. Yellow: some are Up and some are Down. Red: all enabled checks are Down. Gray: at least one enabled check has no current result, there are no enabled checks, or group monitoring is disabled. Three consecutive failures mark a check Down; one success restores Up. The first two failures before any success remain unknown. Disabled checks do not contribute."

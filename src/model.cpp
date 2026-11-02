@@ -18,9 +18,28 @@ std::wstring new_id() {
     StringFromGUID2(id, text, 40);
     return std::wstring(text + 1, 36);
 }
-Config initial_config() {
-    Group group; group.id = new_id(); group.name = L"Local devices"; group.label = L"LOCAL";
-    return {std::nullopt, {group}};
+size_t add_default_groups(Config& config, Language language) {
+    auto next = config; size_t count = 0;
+    const wchar_t* labels[] = {L"LOCAL", L"WEB", L"SSH"};
+    const wchar_t* names[] = {
+        translated(language, L"Local devices", L"Локальные устройства"),
+        translated(language, L"Web services", L"Веб-сервисы"), L"SSH"
+    };
+    for (size_t i = 0; i < 3; ++i) {
+        const bool present = std::any_of(next.groups.begin(), next.groups.end(), [&](const Group& g) {
+            return CompareStringOrdinal(g.label.c_str(), -1, labels[i], -1, TRUE) == CSTR_EQUAL;
+        });
+        if (!present) {
+            Group group; group.id = new_id(); group.name = names[i]; group.label = labels[i];
+            next.groups.push_back(std::move(group)); ++count;
+        }
+    }
+    const auto error = validate(next, language); if (!error.empty()) throw std::runtime_error(utf8(error));
+    if (count) config = std::move(next);
+    return count;
+}
+Config initial_config(Language language) {
+    Config config; add_default_groups(config, language); return config;
 }
 static bool valid_text(const std::wstring& value, size_t maximum, bool empty = false) {
     return (empty || !value.empty()) && value.size() <= maximum &&

@@ -11,7 +11,7 @@ See the [improvement and work plan](docs/roadmap.md) for priorities and acceptan
 | Red | All enabled checks are confirmed Down |
 | Gray | Disabled monitoring, no enabled checks, missing results, or stale results |
 
-There are no mandatory public targets. First launch creates one empty LOCAL group in memory. Nothing is probed until checks are added and saved.
+There are no mandatory public targets. First launch without a saved configuration creates three empty groups in memory: Local devices (LOCAL), Web services (WEB), and SSH. Their names follow the selected language. Nothing is probed until checks are added and saved. Existing configurations, including an intentionally empty one, are loaded unchanged. **Default groups** adds missing LOCAL/WEB/SSH labels to the draft without changing existing groups or IDs.
 
 ## Build
 
@@ -50,6 +50,8 @@ The VS 2022 commands are provided for portability; the recorded local verificati
 Edits are captured when switching selection, testing or saving. Cancel discards the draft. Delete affects the draft until Save. The native dialog follows TrafficMonitor's language: Russian and English are supported, with English as the fallback for other languages. See [localization](docs/localization.md).
 
 Click **Help** or press **F1** in settings for an offline guide covering setup, check types, indicator colors, timing, display/restart rules, manual testing and common errors. The guide uses the same language as settings, can be scrolled and copied, and opens without validating or saving unfinished edits.
+
+**Import SSH...** reads an existing OpenSSH client configuration, initially offering `%USERPROFILE%\.ssh\config`. Review Host aliases, addresses, ports and skip reasons, choose an existing group or a new SSH group, and select the rows to add. Import creates TCP port checks, using `HostName` and `Port` (default 22), without SSH login, credentials or command execution. New checks remain a draft until Save. Reimporting a TCP alias or endpoint already in that group preserves the existing check. See [SSH import](docs/ssh-import.md) for supported syntax, Include behavior and limitations.
 
 `MaxVisibleGroups` accepts `All` or 0-4096. Zero exports no indicators. Otherwise the first N groups with Show in taskbar selected are exported in configuration order. Hidden groups continue to run if monitoring is enabled. Each group and check has a persistent UUID independent of its name and position.
 

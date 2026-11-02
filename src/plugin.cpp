@@ -60,6 +60,7 @@ class Plugin final : public ITMPlugin {
     std::vector<Group> exported;
     Language language{Language::English};
     bool initialized{};
+    bool loaded_from_file{};
     std::mutex tooltip_mutex;
     std::map<DWORD, std::wstring> tooltips;
     std::wstring load_message() const {
@@ -85,12 +86,13 @@ public:
     void OnExtenedInfo(ExtendedInfoIndex index, const wchar_t* value) override {
         if (index != EI_CONFIG_DIR || initialized || !value) return;
         path = std::filesystem::path(value) / L"NetWatch.conf";
-        try { engine.apply(load_config(path)); }
+        try { const bool exists = std::filesystem::exists(path); engine.apply(load_config(path)); loaded_from_file = exists; }
         catch (const std::exception& error) { load_error = wide(error.what()); }
     }
     void OnInitialize(ITrafficMonitor* host) override {
         if (initialized) return;
         language = ui_language(host ? host->GetLanguageId() : 0, GetUserDefaultUILanguage());
+        if (!loaded_from_file) engine.apply(initial_config(language));
         exported = visible_groups(engine.configuration());
         for (const auto& group : exported) items.push_back(std::make_unique<Item>(engine, group));
         initialized = true;
