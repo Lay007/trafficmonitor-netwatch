@@ -102,3 +102,5 @@ BEGIN
 END
 
 #include "resources_ru.rc"
+#include "resources_zh_cn.rc"
+#include "resources_zh_tw.rc"

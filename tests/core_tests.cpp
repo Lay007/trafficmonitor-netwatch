@@ -21,6 +21,12 @@ static void core() {
     require(ui_language(0x409, 0x419) == Language::English, "Host English must override Windows Russian");
     require(ui_language(0, 0x419) == Language::Russian, "Missing host language must use Windows language");
     require(ui_language(0x407, 0x419) == Language::English, "Unsupported host language must use English");
+    require(ui_language(0x804, 0x419) == Language::ChineseSimplified, "Simplified Chinese host");
+    require(ui_language(0x1004, 0x419) == Language::ChineseSimplified, "Singapore Chinese host");
+    require(ui_language(0x404, 0x409) == Language::ChineseTraditional, "Traditional Chinese host");
+    require(ui_language(0xc04, 0x409) == Language::ChineseTraditional && ui_language(0x1404, 0x409) == Language::ChineseTraditional, "Hong Kong/Macau Chinese hosts");
+    require(ui_language(0, 0x804) == Language::ChineseSimplified, "Chinese Windows fallback");
+    require(ui_language(0x7c04, 0x409) == Language::ChineseTraditional, "Neutral Hant language");
     auto layout = initial_config();
     const auto exported = visible_groups(layout);
     auto edited = layout;
@@ -41,6 +47,8 @@ static void core() {
     require(validate(invalid_ru, Language::Russian).find(L"Название группы") != std::wstring::npos, "Russian validation");
     Check untested;
     require(describe(untested, nullptr, Clock::now(), Language::Russian).find(L"ещё не проверено") != std::wstring::npos, "Russian tooltip");
+    require(describe(untested, nullptr, Clock::now(), Language::ChineseSimplified).find(L"尚未检测") != std::wstring::npos, "Simplified Chinese tooltip");
+    require(describe(untested, nullptr, Clock::now(), Language::ChineseTraditional).find(L"尚未檢查") != std::wstring::npos, "Traditional Chinese tooltip");
     Config c = initial_config(); c.groups.resize(1);
     const auto original = c.groups[0].id;
     Group second; second.id = new_id(); second.name = L"Second"; c.groups.push_back(second);

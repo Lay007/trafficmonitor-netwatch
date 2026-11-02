@@ -11,10 +11,17 @@ using Clock = std::chrono::steady_clock;
 enum class Kind { Icmp, Tcp, Http };
 enum class Health { Unknown, Up, Mixed, Down };
 enum class Error { None, Dns, Refused, Timeout, Connect, Unreachable, Tls, Http, Internal };
-enum class Language { English, Russian };
+enum class Language { English, Russian, ChineseSimplified, ChineseTraditional };
 Language ui_language(unsigned short host, unsigned short fallback);
-inline const wchar_t* translated(Language language, const wchar_t* english, const wchar_t* russian) {
-    return language == Language::Russian ? russian : english;
+inline unsigned resource_offset(Language language) { return static_cast<unsigned>(language) * 1000; }
+inline const wchar_t* translated(Language language, const wchar_t* english, const wchar_t* russian,
+    const wchar_t* simplified, const wchar_t* traditional) {
+    switch (language) {
+    case Language::Russian: return russian;
+    case Language::ChineseSimplified: return simplified;
+    case Language::ChineseTraditional: return traditional;
+    default: return english;
+    }
 }
 struct Check {
     std::wstring id, name{L"New check"}, target{L"127.0.0.1"};

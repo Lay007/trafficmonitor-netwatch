@@ -193,14 +193,14 @@ std::vector<SshHost> read_ssh_config(const std::filesystem::path& path, const st
 }
 const wchar_t* ssh_issue_text(SshIssue issue, Language language) {
     switch (issue) {
-    case SshIssue::None: return translated(language, L"Ready (TCP)", L"Готово (TCP)");
-    case SshIssue::Proxy: return translated(language, L"Skipped: proxy/jump host", L"Пропуск: прокси/промежуточный узел");
-    case SshIssue::Canonicalization: return translated(language, L"Skipped: hostname canonicalization", L"Пропуск: преобразование имени SSH");
-    case SshIssue::InvalidHost: return translated(language, L"Skipped: invalid host/name", L"Пропуск: неверный узел/название");
-    case SshIssue::InvalidPort: return translated(language, L"Skipped: invalid port", L"Пропуск: неверный порт");
-    case SshIssue::Tokens: return translated(language, L"Skipped: unsupported tokens", L"Пропуск: неподдерживаемые подстановки");
-    case SshIssue::Inactive: return translated(language, L"Skipped: conditional Include", L"Пропуск: условный Include");
-    default: return translated(language, L"Already in this group", L"Уже есть в этой группе");
+    case SshIssue::None: return translated(language, L"Ready (TCP)", L"Готово (TCP)", L"就绪（TCP）", L"就緒（TCP）");
+    case SshIssue::Proxy: return translated(language, L"Skipped: proxy/jump host", L"Пропуск: прокси/промежуточный узел", L"已跳过：代理/跳板机", L"已略過：代理/跳板主機");
+    case SshIssue::Canonicalization: return translated(language, L"Skipped: hostname canonicalization", L"Пропуск: преобразование имени SSH", L"已跳过：主机名规范化", L"已略過：主機名稱正規化");
+    case SshIssue::InvalidHost: return translated(language, L"Skipped: invalid host/name", L"Пропуск: неверный узел/название", L"已跳过：无效主机/名称", L"已略過：無效主機/名稱");
+    case SshIssue::InvalidPort: return translated(language, L"Skipped: invalid port", L"Пропуск: неверный порт", L"已跳过：无效端口", L"已略過：無效連接埠");
+    case SshIssue::Tokens: return translated(language, L"Skipped: unsupported tokens", L"Пропуск: неподдерживаемые подстановки", L"已跳过：不支持的变量", L"已略過：不支援的變數");
+    case SshIssue::Inactive: return translated(language, L"Skipped: conditional Include", L"Пропуск: условный Include", L"已跳过：Include 条件未满足", L"已略過：Include 條件未滿足");
+    default: return translated(language, L"Already in this group", L"Уже есть в этой группе", L"该组中已存在", L"此群組中已存在");
     }
 }
 std::vector<SshIssue> ssh_import_status(const Group& group, const std::vector<SshHost>& hosts) {

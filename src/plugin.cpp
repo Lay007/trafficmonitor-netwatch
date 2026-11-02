@@ -65,8 +65,8 @@ class Plugin final : public ITMPlugin {
     std::map<DWORD, std::wstring> tooltips;
     std::wstring load_message() const {
         if (load_error.empty()) return {};
-        return std::wstring(translated(language, L"Configuration could not be loaded: ", L"Не удалось загрузить настройки: ")) + load_error +
-            translated(language, L". The original file has not been changed.", L". Исходный файл не изменён.");
+        return std::wstring(translated(language, L"Configuration could not be loaded: ", L"Не удалось загрузить настройки: ", L"无法加载配置：", L"無法載入設定：")) + load_error +
+            translated(language, L". The original file has not been changed.", L". Исходный файл не изменён.", L"。原文件未更改。", L"。原檔案未變更。");
     }
 public:
     IPluginItem* GetItem(int index) override {
@@ -76,7 +76,7 @@ public:
     const wchar_t* GetInfo(PluginInfoIndex index) override {
         switch (index) {
         case TMI_NAME: return L"NetWatch";
-        case TMI_DESCRIPTION: return translated(language, L"Network availability groups (ICMP, TCP, HTTP/HTTPS)", L"Группы доступности сети (ICMP, TCP, HTTP/HTTPS)");
+        case TMI_DESCRIPTION: return translated(language, L"Network availability groups (ICMP, TCP, HTTP/HTTPS)", L"Группы доступности сети (ICMP, TCP, HTTP/HTTPS)", L"网络可用性分组（ICMP、TCP、HTTP/HTTPS）", L"網路可用性群組（ICMP、TCP、HTTP/HTTPS）");
         case TMI_AUTHOR: return L"NetWatch contributors";
         case TMI_COPYRIGHT: return L"NetWatch contributors, 2026";
         case TMI_VERSION: return L"0.1.0";

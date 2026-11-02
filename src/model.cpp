@@ -9,7 +9,14 @@
 
 namespace nw {
 Language ui_language(unsigned short host, unsigned short fallback) {
-    return PRIMARYLANGID(host ? host : fallback) == LANG_RUSSIAN ? Language::Russian : Language::English;
+    const auto id = host ? host : fallback;
+    if (PRIMARYLANGID(id) == LANG_RUSSIAN) return Language::Russian;
+    if (PRIMARYLANGID(id) == LANG_CHINESE) {
+        const auto region = SUBLANGID(id);
+        return id == LANG_CHINESE_TRADITIONAL || region == SUBLANG_CHINESE_TRADITIONAL || region == SUBLANG_CHINESE_HONGKONG || region == SUBLANG_CHINESE_MACAU ?
+            Language::ChineseTraditional : Language::ChineseSimplified;
+    }
+    return Language::English;
 }
 std::wstring new_id() {
     GUID id{};
@@ -22,8 +29,8 @@ size_t add_default_groups(Config& config, Language language) {
     auto next = config; size_t count = 0;
     const wchar_t* labels[] = {L"LOCAL", L"WEB", L"SSH"};
     const wchar_t* names[] = {
-        translated(language, L"Local devices", L"Локальные устройства"),
-        translated(language, L"Web services", L"Веб-сервисы"), L"SSH"
+        translated(language, L"Local devices", L"Локальные устройства", L"本地设备", L"本機裝置"),
+        translated(language, L"Web services", L"Веб-сервисы", L"Web 服务", L"Web 服務"), L"SSH"
     };
     for (size_t i = 0; i < 3; ++i) {
         const bool present = std::any_of(next.groups.begin(), next.groups.end(), [&](const Group& g) {
@@ -46,8 +53,8 @@ static bool valid_text(const std::wstring& value, size_t maximum, bool empty = f
         std::none_of(value.begin(), value.end(), [](wchar_t c) { return c < 32 || c == 127; });
 }
 std::wstring validate(const Config& config, Language language) {
-    if (config.max_visible && *config.max_visible > 4096) return translated(language, L"Display limit must be All or 0-4096.", L"Лимит отображения: Все или число от 0 до 4096.");
-    if (config.groups.size() > 4096) return translated(language, L"At most 4096 groups are supported.", L"Допускается не более 4096 групп.");
+    if (config.max_visible && *config.max_visible > 4096) return translated(language, L"Display limit must be All or 0-4096.", L"Лимит отображения: Все или число от 0 до 4096.", L"显示上限必须为全部或 0-4096。", L"顯示上限必須為全部或 0-4096。");
+    if (config.groups.size() > 4096) return translated(language, L"At most 4096 groups are supported.", L"Допускается не более 4096 групп.", L"最多支持 4096 个组。", L"最多支援 4096 個群組。");
     std::set<std::wstring> ids;
     size_t count = 0;
     auto identity = [&](const std::wstring& id) {
@@ -59,18 +66,18 @@ std::wstring validate(const Config& config, Language language) {
         return ids.insert(id).second;
     };
     for (const auto& group : config.groups) {
-        if (!identity(group.id)) return translated(language, L"Group IDs must be unique UUIDs.", L"Идентификаторы групп должны быть уникальными UUID.");
-        if (!valid_text(group.name, 128) || !valid_text(group.label, 24)) return translated(language, L"Group name: 1-128 characters; label: 1-24. No control characters.", L"Название группы: 1-128 символов; метка: 1-24. Управляющие символы запрещены.");
+        if (!identity(group.id)) return translated(language, L"Group IDs must be unique UUIDs.", L"Идентификаторы групп должны быть уникальными UUID.", L"组 ID 必须是唯一的 UUID。", L"群組 ID 必須是唯一的 UUID。");
+        if (!valid_text(group.name, 128) || !valid_text(group.label, 24)) return translated(language, L"Group name: 1-128 characters; label: 1-24. No control characters.", L"Название группы: 1-128 символов; метка: 1-24. Управляющие символы запрещены.", L"组名长度为 1-128 个字符，标签为 1-24 个字符。不得包含控制字符。", L"群組名稱長度為 1-128 個字元，標籤為 1-24 個字元。不得包含控制字元。");
         for (const auto& check : group.checks) {
-            if (++count > 16384) return translated(language, L"At most 16384 checks are supported.", L"Допускается не более 16384 проверок.");
-            if (!identity(check.id)) return translated(language, L"Check IDs must be unique UUIDs.", L"Идентификаторы проверок должны быть уникальными UUID.");
-            if (!valid_text(check.name, 128) || !valid_text(check.target, 2048)) return translated(language, L"Check name and address/URL are required. No control characters.", L"Укажите название и адрес/URL проверки. Управляющие символы запрещены.");
+            if (++count > 16384) return translated(language, L"At most 16384 checks are supported.", L"Допускается не более 16384 проверок.", L"最多支持 16384 项检测。", L"最多支援 16384 項檢查。");
+            if (!identity(check.id)) return translated(language, L"Check IDs must be unique UUIDs.", L"Идентификаторы проверок должны быть уникальными UUID.", L"检测 ID 必须是唯一的 UUID。", L"檢查 ID 必須是唯一的 UUID。");
+            if (!valid_text(check.name, 128) || !valid_text(check.target, 2048)) return translated(language, L"Check name and address/URL are required. No control characters.", L"Укажите название и адрес/URL проверки. Управляющие символы запрещены.", L"请填写检测名称和地址/URL，不得包含控制字符。", L"請填寫檢查名稱和位址/URL，不得包含控制字元。");
             if (check.interval_ms < 1000 || check.interval_ms > 86400000 || check.timeout_ms < 100 || check.timeout_ms > 30000)
-                return translated(language, L"Interval must be 1-86400 seconds; timeout must be 100-30000 milliseconds.", L"Интервал: 1-86400 секунд; тайм-аут: 100-30000 миллисекунд.");
-            if (check.kind == Kind::Tcp && (check.port < 1 || check.port > 65535)) return translated(language, L"TCP port must be 1-65535.", L"Порт TCP должен быть от 1 до 65535.");
-            if (check.kind != Kind::Icmp && check.kind != Kind::Tcp && check.kind != Kind::Http) return translated(language, L"Unknown check type.", L"Неизвестный тип проверки.");
+                return translated(language, L"Interval must be 1-86400 seconds; timeout must be 100-30000 milliseconds.", L"Интервал: 1-86400 секунд; тайм-аут: 100-30000 миллисекунд.", L"间隔必须为 1-86400 秒，超时为 100-30000 毫秒。", L"間隔必須為 1-86400 秒，逾時為 100-30000 毫秒。");
+            if (check.kind == Kind::Tcp && (check.port < 1 || check.port > 65535)) return translated(language, L"TCP port must be 1-65535.", L"Порт TCP должен быть от 1 до 65535.", L"TCP 端口必须为 1-65535。", L"TCP 連接埠必須為 1-65535。");
+            if (check.kind != Kind::Icmp && check.kind != Kind::Tcp && check.kind != Kind::Http) return translated(language, L"Unknown check type.", L"Неизвестный тип проверки.", L"未知的检测类型。", L"未知的檢查類型。");
             if (check.kind == Kind::Http && check.target.rfind(L"https://", 0) != 0 && check.target.rfind(L"http://", 0) != 0)
-                return translated(language, L"HTTP checks require an http:// or https:// URL.", L"Для проверки HTTP нужен URL с http:// или https://.");
+                return translated(language, L"HTTP checks require an http:// or https:// URL.", L"Для проверки HTTP нужен URL с http:// или https://.", L"HTTP 检测需要以 http:// 或 https:// 开头的 URL。", L"HTTP 檢查需要以 http:// 或 https:// 開頭的 URL。");
         }
     }
     return {};
@@ -122,46 +129,46 @@ Health aggregate(const Group& group, const std::map<std::wstring, History>& resu
 }
 const wchar_t* health_text(Health v, Language language) {
     switch (v) {
-    case Health::Up: return translated(language, L"Up", L"Доступно");
-    case Health::Down: return translated(language, L"Down", L"Недоступно");
-    case Health::Mixed: return translated(language, L"Partial failure", L"Частичный сбой");
-    default: return translated(language, L"Unknown", L"Нет данных");
+    case Health::Up: return translated(language, L"Up", L"Доступно", L"可用", L"可用");
+    case Health::Down: return translated(language, L"Down", L"Недоступно", L"不可用", L"不可用");
+    case Health::Mixed: return translated(language, L"Partial failure", L"Частичный сбой", L"部分故障", L"部分故障");
+    default: return translated(language, L"Unknown", L"Нет данных", L"无数据", L"無資料");
     }
 }
 const wchar_t* error_text(Error v, Language language) {
     switch (v) {
-    case Error::None: return translated(language, L"Success", L"Успешно");
-    case Error::Dns: return translated(language, L"DNS error", L"Ошибка DNS");
-    case Error::Refused: return translated(language, L"Connection refused", L"В подключении отказано");
-    case Error::Timeout: return translated(language, L"Timeout", L"Время ожидания истекло");
-    case Error::Connect: return translated(language, L"Connection error", L"Ошибка подключения");
-    case Error::Unreachable: return translated(language, L"Host unreachable", L"Узел недоступен");
-    case Error::Tls: return translated(language, L"TLS validation/handshake error", L"Ошибка сертификата или подключения TLS");
-    case Error::Http: return translated(language, L"HTTP status error", L"Ошибка статуса HTTP");
-    default: return translated(language, L"Internal error", L"Внутренняя ошибка");
+    case Error::None: return translated(language, L"Success", L"Успешно", L"成功", L"成功");
+    case Error::Dns: return translated(language, L"DNS error", L"Ошибка DNS", L"DNS 错误", L"DNS 錯誤");
+    case Error::Refused: return translated(language, L"Connection refused", L"В подключении отказано", L"连接被拒绝", L"連線遭拒");
+    case Error::Timeout: return translated(language, L"Timeout", L"Время ожидания истекло", L"超时", L"逾時");
+    case Error::Connect: return translated(language, L"Connection error", L"Ошибка подключения", L"连接错误", L"連線錯誤");
+    case Error::Unreachable: return translated(language, L"Host unreachable", L"Узел недоступен", L"主机不可达", L"主機無法連線");
+    case Error::Tls: return translated(language, L"TLS validation/handshake error", L"Ошибка сертификата или подключения TLS", L"TLS 证书或握手错误", L"TLS 憑證或交握錯誤");
+    case Error::Http: return translated(language, L"HTTP status error", L"Ошибка статуса HTTP", L"HTTP 状态错误", L"HTTP 狀態錯誤");
+    default: return translated(language, L"Internal error", L"Внутренняя ошибка", L"内部错误", L"內部錯誤");
     }
 }
 const wchar_t* measurement(Kind v, Language language) {
     switch (v) {
     case Kind::Icmp: return L"ICMP RTT";
-    case Kind::Tcp: return translated(language, L"TCP connect time", L"Время подключения TCP");
-    default: return translated(language, L"HTTP response time (headers)", L"Время ответа HTTP (заголовки)");
+    case Kind::Tcp: return translated(language, L"TCP connect time", L"Время подключения TCP", L"TCP 连接耗时", L"TCP 連線時間");
+    default: return translated(language, L"HTTP response time (headers)", L"Время ответа HTTP (заголовки)", L"HTTP 响应时间（响应头）", L"HTTP 回應時間（標頭）");
     }
 }
 std::wstring describe(const Check& check, const History* h, Clock::time_point now, Language language) {
     std::wostringstream s;
-    s << check.name << L": " << (check.enabled ? health_text(health(check, h, now), language) : translated(language, L"Disabled", L"Отключено"));
+    s << check.name << L": " << (check.enabled ? health_text(health(check, h, now), language) : translated(language, L"Disabled", L"Отключено", L"已禁用", L"已停用"));
     if (h && h->has_result) {
         s << L"; " << error_text(h->last.error, language) << L"; " << measurement(check.kind, language) << L"=";
-        if (h->last.has_measurement) s << std::fixed << std::setprecision(1) << h->last.milliseconds << translated(language, L" ms", L" мс");
-        else s << translated(language, L"n/a", L"нет данных");
+        if (h->last.has_measurement) s << std::fixed << std::setprecision(1) << h->last.milliseconds << translated(language, L" ms", L" мс", L" ms", L" ms");
+        else s << translated(language, L"n/a", L"нет данных", L"无数据", L"無資料");
         if (h->last.http_status) s << L"; HTTP " << h->last.http_status;
-        if (h->last.code) s << translated(language, L"; code=", L"; код=") << h->last.code;
-        if (h->failures) s << translated(language, L"; failures=", L"; ошибок=") << h->failures << L"/3";
+        if (h->last.code) s << translated(language, L"; code=", L"; код=", L"; 错误码=", L"; 錯誤碼=") << h->last.code;
+        if (h->failures) s << translated(language, L"; failures=", L"; ошибок=", L"; 连续失败=", L"; 連續失敗=") << h->failures << L"/3";
         auto time = std::chrono::system_clock::to_time_t(h->last.updated);
         tm local{}; localtime_s(&local, &time);
-        s << translated(language, L"; updated ", L"; обновлено ") << std::put_time(&local, L"%Y-%m-%d %H:%M:%S");
-    } else s << translated(language, L"; not tested", L"; ещё не проверено");
+        s << translated(language, L"; updated ", L"; обновлено ", L"; 更新时间 ", L"; 更新時間 ") << std::put_time(&local, L"%Y-%m-%d %H:%M:%S");
+    } else s << translated(language, L"; not tested", L"; ещё не проверено", L"; 尚未检测", L"; 尚未檢查");
     return s.str();
 }
 std::string utf8(const std::wstring& value) {

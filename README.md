@@ -47,7 +47,7 @@ The VS 2022 commands are provided for portability; the recorded local verificati
 6. Set the interval in seconds (default 30) and timeout in milliseconds (default 2000). **Test now (draft)** probes the edited check without saving it or changing monitoring history. A successful manual probe does not immediately make the taskbar circle green.
 7. Save. After display changes, restart TrafficMonitor and select the new plugin items in its taskbar display settings.
 
-Edits are captured when switching selection, testing or saving. Cancel discards the draft. Delete affects the draft until Save. The native dialog follows TrafficMonitor's language: Russian and English are supported, with English as the fallback for other languages. See [localization](docs/localization.md).
+Edits are captured when switching selection, testing or saving. Cancel discards the draft. Delete affects the draft until Save. The native dialog follows TrafficMonitor's language: English, Russian, Simplified Chinese and Traditional Chinese are supported, with English as the fallback for other languages. See [localization](docs/localization.md).
 
 Click **Help** or press **F1** in settings for an offline guide covering setup, check types, indicator colors, timing, display/restart rules, manual testing and common errors. The guide uses the same language as settings, can be scrolled and copied, and opens without validating or saving unfinished edits.
 
@@ -86,6 +86,8 @@ The versioned UTF-8 configuration file is `NetWatch.conf` in the directory suppl
 CTest covers model/config behavior, the real hidden settings controller, the exported DLL ABI, GDI calls, concurrent getters, local network probes, upstream-file hashes and actual DLL unloading during an HTTP request confirmed by the local server. Network tests generate temporary self-signed certificates with OpenSSL. Git for Windows' bundled OpenSSL is detected automatically; alternatively place OpenSSL on PATH. IPv6 loopback must be enabled. ICMP failure uses the explicit documentation address `192.0.2.1`; all successful network tests use loopback.
 
 To inspect settings without installing the plugin, run `build/Release/netwatch_host.exe` without arguments. Its preview configuration is isolated under `build/Release/preview-config`.
+
+To preview Chinese without changing Windows or an installed host's language, run `build/Release/netwatch_host.exe build/Release/NetWatch.dll .work/preview-cn --ui-zh-cn`, or use a separate `.work/preview-tw` directory and `--ui-zh-tw` for Traditional Chinese. These flags belong to the disposable test host.
 
 For an ABI host built against an independently downloaded, pinned official header:
 

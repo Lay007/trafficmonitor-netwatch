@@ -14,7 +14,17 @@ cmake --build --preset release
 ctest --preset release --output-on-failure
 ```
 
-Latest full-suite run: **8/8 passed**, 25.85 seconds, on 2026-11-02 after adding OpenSSH import and default groups. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`. The preceding help follow-up passed 7/7 tests (25.68 seconds), followed by a rebuild and the relevant settings test after final wording changes.
+Latest full-suite run: **8/8 passed**, 26.40 seconds, on 2026-11-02 after adding both Chinese variants. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`. The preceding OpenSSH/default-groups run passed 8/8 (25.85 seconds), and the earlier help follow-up passed 7/7 (25.68 seconds).
+
+### Simplified and Traditional Chinese (2026-11-02)
+
+Added complete Chinese settings/help/SSH-preview resources plus translated status, validation, measurement, skip-reason, description and load/save explanation text. Host LANGID selection distinguishes Mainland/Singapore Simplified Chinese from Taiwan/Hong Kong/Macau Traditional Chinese, including the neutral Hant LANGID. English remains the fallback for other unsupported languages. User names, SSH aliases, IDs and persistent file tags remain unchanged.
+
+Tests check LANGID precedence and regional mappings, nonempty Chinese resource strings across the catalog, both Chinese settings/help/SSH-preview resources, selected import, localized restart notices and persistence of the internal All token. The actual DLL is loaded with all four host-language implementations, and new Chinese group names are checked separately from preservation of a saved configuration. Compilation initially caught a shadowed local name in the expanded test; it was renamed, and only results following a successful build are counted.
+
+Visual inspection used the actual Release DLL in the standalone host with explicit test-only `--ui-zh-cn`/`--ui-zh-tw` language flags and disposable `.work/` directories. Both Chinese settings windows displayed readable glyphs and accessible controls without obvious clipping on the current desktop. Simplified Chinese help opened by button, scrolled to SSH/default-group sections and closed; the settings window then closed through Cancel. Traditional Chinese settings also closed through Cancel. Both preview processes returned zero. No system/installed-host language or configuration was changed. This does not certify every DPI, theme, fallback font or native-speaker wording choice.
+
+Current Release DLL SHA-256: `28f52ed53783fd9969f1f8b5c379816ce3a8908958ce12c7423abdc53373d137`.
 
 ### OpenSSH import and default groups (2026-11-02)
 
@@ -28,7 +38,7 @@ An independent `ssh -G -F` experiment on synthetic fixtures confirmed case-sensi
 
 The computer-use helper was available in this session. Visual inspection of the standalone DLL host confirmed the three Russian default groups, both new settings buttons, and the import preview's destination group, checkboxes and resolved alias/address/port columns. No obvious clipping was observed at that desktop configuration; a full DPI/theme matrix was not tested. A preview of an existing user-selected SSH file was visible, but its addresses and screenshots are not retained in public evidence. The preview process subsequently exited. These observations concern the standalone test host, not a pristine TrafficMonitor GUI certification; automated tests remain the evidence for controlled cancellation/Save scenarios.
 
-Current Release DLL SHA-256: `cf0c598117e67e7580dd9991325760e8d172d4e0c9a9cd69a2a9ad097cd5f712`.
+SSH/default-groups DLL SHA-256, before Chinese resources: `cf0c598117e67e7580dd9991325760e8d172d4e0c9a9cd69a2a9ad097cd5f712`.
 
 ### Offline help follow-up (2026-10-30)
 
@@ -119,5 +129,5 @@ Reproduction and raw artifacts are described in [integration testing](integratio
 - A successful trusted HTTPS exchange was not exercised against a controlled trusted-CA fixture; invalid TLS rejection was exercised. No Windows trust settings were changed.
 - DNS-provider cancellation and WinHTTP callback draining must finish before stack state or DLL code can be released. The I/O budget is bounded, but abnormal OS/provider stalls can defer cleanup beyond that budget. Forced process termination is not graceful shutdown.
 - Ordinary FreeLibrary during active ICMP/HTTP and normal GUI exit of the source-built host during active HTTP were tested. Pristine-binary GUI exit and long-duration CPU/memory behavior were not.
-- x86/ARM64, alternate TrafficMonitor releases, unusual DNS providers, D2D, per-monitor DPI transitions and a complete dark/light theme matrix were not verified. Russian UI resource/controller tests passed, but its desktop layout was not visually inspected. The earlier source-host GDI layout used 150% DPI.
+- x86/ARM64, alternate TrafficMonitor releases, unusual DNS providers, D2D, per-monitor DPI transitions and a complete dark/light theme matrix were not verified. Russian and both Chinese settings were observed in the standalone host; the full UI matrix and native-speaker Chinese review remain open. The earlier source-host GDI layout used 150% DPI.
 - The scheduler intentionally sacrifices timeliness for bounded work. Large configurations can become gray because results expire. There is no promise of exact intervals under overload.

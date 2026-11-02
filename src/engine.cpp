@@ -127,11 +127,11 @@ std::wstring Engine::tooltip(Language language) const {
     std::lock_guard<std::mutex> lock(state->mutex);
     std::wstring text = L"NetWatch";
     for (const auto& group : state->config.groups) {
-        text += L"\r\n" + group.label + L" (" + group.name + L"): " + (group.enabled ? health_text(aggregate(group, state->results, Clock::now()), language) : translated(language, L"Monitoring disabled", L"Мониторинг отключён"));
+        text += L"\r\n" + group.label + L" (" + group.name + L"): " + (group.enabled ? health_text(aggregate(group, state->results, Clock::now()), language) : translated(language, L"Monitoring disabled", L"Мониторинг отключён", L"监测已禁用", L"監測已停用"));
         for (const auto& check : group.checks) {
             const auto found = state->results.find(check.id);
             text += L"\r\n  " + describe(check, found == state->results.end() ? nullptr : &found->second, Clock::now(), language);
-            if (text.size() > 12000) { text.resize(12000); return text + translated(language, L"\r\nMore checks in NetWatch settings.", L"\r\nОстальные проверки доступны в настройках NetWatch."); }
+            if (text.size() > 12000) { text.resize(12000); return text + translated(language, L"\r\nMore checks in NetWatch settings.", L"\r\nОстальные проверки доступны в настройках NetWatch.", L"\r\n更多检测请查看 NetWatch 设置。", L"\r\n其他檢查請查看 NetWatch 設定。"); }
         }
         if (text.size() > 12000) break;
     }

@@ -10,6 +10,7 @@ static std::vector<std::wstring> help_titles, help_contents;
 static bool help_readonly{};
 static std::filesystem::path ssh_fixture;
 static bool cancel_picker{}, cancel_preview{}, ssh_preview_seen{};
+static std::wstring ssh_preview_title;
 static BOOL WINAPI inspect_file_picker(LPOPENFILENAMEW picker) {
     if (cancel_picker) return FALSE;
     wcscpy_s(picker->lpstrFile, picker->nMaxFile, ssh_fixture.c_str()); return TRUE;
@@ -32,8 +33,9 @@ static INT_PTR WINAPI inspect_help_dialog(HINSTANCE module, LPCWSTR resource, HW
     HWND window = CreateDialogParamW(module, resource, parent, callback, data);
     if (!window) return -1;
     const auto id = reinterpret_cast<ULONG_PTR>(resource);
-    if (id == IDD_SSH_IMPORT || id == IDD_SSH_IMPORT_RU) {
+    if (id % 1000 == IDD_SSH_IMPORT) {
         ssh_preview_seen = true;
+        wchar_t title[128]{}; GetWindowTextW(window, title, 128); ssh_preview_title = title;
         require(ListView_GetItemCount(GetDlgItem(window, IDC_SSH_HOSTS)) == 3, "Real SSH preview rows");
         auto* preview = reinterpret_cast<nw::SshDialog*>(data);
         require(preview->issues[1] == nw::SshIssue::Proxy, "Preview missing proxy explanation");
@@ -165,7 +167,25 @@ int main() {
             require(imports.draft.groups[2].checks.size() == 1 && imports.draft.groups[2].checks[0].id == imported_id, "UI reimport duplicated or replaced check");
             imports.command(IDOK, BN_CLICKED);
             require(import_engine.configuration().groups[2].checks.size() == 1 && nw::load_config(imports.path).groups[2].checks[0].id == imported_id, "Import Save lost TCP check/identity");
-            DestroyWindow(import_window); std::filesystem::remove_all(folder);
+            DestroyWindow(import_window);
+            for (const auto language : {nw::Language::ChineseSimplified, nw::Language::ChineseTraditional}) {
+                const bool traditional = language == nw::Language::ChineseTraditional;
+                nw::Engine localized_engine(nw::initial_config(language));
+                nw::Dialog localized{GetModuleHandleW(nullptr), localized_engine, folder / (traditional ? L"tw.conf" : L"cn.conf"), {}, localized_engine.configuration(), nw::visible_groups(localized_engine.configuration()), language};
+                HWND localized_window = CreateDialogParamW(localized.module, MAKEINTRESOURCEW(IDD_SETTINGS + nw::resource_offset(language)), nullptr, nw::procedure, reinterpret_cast<LPARAM>(&localized));
+                require(localized_window != nullptr, "Create Chinese settings resource");
+                require(localized.text(IDOK) == (traditional ? L"儲存" : L"保存") && localized.text(IDC_LIMIT) == L"全部", "Chinese buttons and All");
+                for (UINT string_id = IDS_INVALID_NUMBER; string_id <= IDS_SSH_ERROR; ++string_id) require(!localized.string(string_id).empty(), "Missing localized resource string");
+                localized.command(IDC_OPEN_HELP, BN_CLICKED);
+                require(help_titles.back() == (traditional ? L"NetWatch 說明" : L"NetWatch 帮助") && help_contents.back().find(traditional ? L"預設群組" : L"标准分组") != std::wstring::npos, "Chinese help completeness");
+                localized.command(IDC_IMPORT_SSH, BN_CLICKED);
+                require(ssh_preview_title == (traditional ? L"匯入 OpenSSH 主機" : L"导入 OpenSSH 主机") && localized.draft.groups[2].checks.size() == 1, "Chinese SSH preview and selected import");
+                localized.text(IDC_GROUP_LABEL, L"SSH2"); localized.command(IDOK, BN_CLICKED);
+                require(notifications.back().find(traditional ? L"重新啟動" : L"重启") != std::wstring::npos, "Chinese restart notice");
+                require(!nw::load_config(localized.path).max_visible, "Chinese All persisted as internal All");
+                DestroyWindow(localized_window);
+            }
+            std::filesystem::remove_all(folder);
         }
         std::cout << "PASS real settings controller: group/check editing, ordering, IDs, limit, validation, draft tests and close during probe\n";
         return 0;

@@ -11,7 +11,7 @@
 namespace nw {
 namespace {
 std::wstring resource_string(HINSTANCE module, Language language, UINT id) {
-    wchar_t text[1024]{}; LoadStringW(module, id + (language == Language::Russian ? 1000 : 0), text, 1024); return text;
+    wchar_t text[1024]{}; LoadStringW(module, id + resource_offset(language), text, 1024); return text;
 }
 std::filesystem::path user_home() {
     const auto length = GetEnvironmentVariableW(L"USERPROFILE", nullptr, 0);
@@ -50,8 +50,8 @@ struct SshDialog {
         ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
         RECT bounds{}; GetClientRect(list, &bounds);
         const wchar_t* titles[] = {
-            translated(language, L"Host alias", L"Псевдоним Host"), translated(language, L"Address", L"Адрес"),
-            translated(language, L"Port", L"Порт"), translated(language, L"Import status", L"Статус импорта")
+            translated(language, L"Host alias", L"Псевдоним Host", L"Host 别名", L"Host 別名"), translated(language, L"Address", L"Адрес", L"地址", L"位址"),
+            translated(language, L"Port", L"Порт", L"端口", L"連接埠"), translated(language, L"Import status", L"Статус импорта", L"导入状态", L"匯入狀態")
         };
         const int widths[] = {20, 32, 8, 40};
         for (int i = 0; i < 4; ++i) {
@@ -133,7 +133,7 @@ struct Dialog {
             if (!content.empty()) content += L"\r\n\r\n";
             content += string(id);
         }
-        const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(language == Language::Russian ? IDD_HELP_RU : IDD_HELP),
+        const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(IDD_HELP + resource_offset(language)),
             window, help_procedure, reinterpret_cast<LPARAM>(content.c_str()));
         if (result == -1) throw std::runtime_error("Cannot create NetWatch help dialog");
     }
@@ -145,14 +145,14 @@ struct Dialog {
         const auto title = string(IDS_SSH_SELECT);
         OPENFILENAMEW picker{}; picker.lStructSize = sizeof(picker); picker.hwndOwner = window;
         picker.lpstrFile = filename; picker.nMaxFile = 32768; picker.lpstrTitle = title.c_str();
-        picker.lpstrFilter = translated(language, L"OpenSSH config\0config;*.conf\0All files\0*.*\0\0", L"Конфигурация OpenSSH\0config;*.conf\0Все файлы\0*.*\0\0");
+        picker.lpstrFilter = translated(language, L"OpenSSH config\0config;*.conf\0All files\0*.*\0\0", L"Конфигурация OpenSSH\0config;*.conf\0Все файлы\0*.*\0\0", L"OpenSSH 配置\0config;*.conf\0所有文件\0*.*\0\0", L"OpenSSH 設定\0config;*.conf\0所有檔案\0*.*\0\0");
         picker.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
         if (!GetOpenFileNameW(&picker)) return;
         auto hosts = read_ssh_config(filename, home);
         if (hosts.empty()) { text(IDC_RESULT, string(IDS_SSH_EMPTY)); return; }
         SshDialog preview{module, language, draft, filename, std::move(hosts)};
         INITCOMMONCONTROLSEX controls{sizeof(controls), ICC_LISTVIEW_CLASSES}; InitCommonControlsEx(&controls);
-        const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(language == Language::Russian ? IDD_SSH_IMPORT_RU : IDD_SSH_IMPORT),
+        const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(IDD_SSH_IMPORT + resource_offset(language)),
             window, ssh_procedure, reinterpret_cast<LPARAM>(&preview));
         if (result == -1) throw std::runtime_error("Cannot create SSH import preview");
         if (preview.accepted) { draft = std::move(preview.config); group = preview.group; check = -1; fill_groups(); text(IDC_RESULT, string(IDS_SSH_ADDED)); }
@@ -301,9 +301,9 @@ struct Dialog {
         std::wostringstream duration;
         duration << std::fixed << std::setprecision(1) << result.milliseconds;
         auto message = tested.name + L": " + error_text(result.error, language) + L"\r\n" + measurement(tested.kind, language) + L"=";
-        message += result.has_measurement ? duration.str() + translated(language, L" ms", L" мс") : translated(language, L"n/a", L"нет данных");
+        message += result.has_measurement ? duration.str() + translated(language, L" ms", L" мс", L" ms", L" ms") : translated(language, L"n/a", L"нет данных", L"无数据", L"無資料");
         if (result.http_status) message += L"; HTTP " + std::to_wstring(result.http_status);
-        if (result.code) message += translated(language, L"; code=", L"; код=") + std::to_wstring(result.code);
+        if (result.code) message += translated(language, L"; code=", L"; код=", L"; 错误码=", L"; 錯誤碼=") + std::to_wstring(result.code);
         text(IDC_RESULT, message);
         manual.reset(); KillTimer(window, 1); enable(IDC_TEST, check >= 0);
     }
@@ -334,7 +334,7 @@ INT_PTR CALLBACK procedure(HWND window, UINT message, WPARAM wparam, LPARAM lpar
 bool show_settings(HWND parent, HINSTANCE module, Engine& engine, const std::filesystem::path& path,
     const std::wstring& error, const std::vector<Group>& exported, Language language) {
     Dialog dialog{module, engine, path, error, engine.configuration(), exported, language};
-    const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(language == Language::Russian ? IDD_SETTINGS_RU : IDD_SETTINGS), parent, procedure, reinterpret_cast<LPARAM>(&dialog));
+    const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(IDD_SETTINGS + resource_offset(language)), parent, procedure, reinterpret_cast<LPARAM>(&dialog));
     if (result == -1) throw std::runtime_error("Cannot create NetWatch settings dialog");
     return dialog.changed;
 }

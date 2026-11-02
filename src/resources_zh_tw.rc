@@ -1,0 +1,98 @@
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL
+3100 DIALOGEX 0, 0, 650, 382
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "NetWatch 設定"
+FONT 9, "Microsoft JhengHei UI"
+BEGIN
+    LTEXT "群組", -1, 10, 9, 170, 12
+    LISTBOX IDC_GROUPS, 10, 24, 170, 113, LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP | WS_BORDER
+    PUSHBUTTON "新增", IDC_GROUP_ADD, 10, 141, 39, 15
+    PUSHBUTTON "刪除", IDC_GROUP_DELETE, 52, 141, 42, 15
+    PUSHBUTTON "上移", IDC_GROUP_UP, 97, 141, 39, 15
+    PUSHBUTTON "下移", IDC_GROUP_DOWN, 139, 141, 41, 15
+    LTEXT "名稱", -1, 10, 166, 40, 10
+    EDITTEXT IDC_GROUP_NAME, 52, 163, 128, 15, ES_AUTOHSCROLL
+    LTEXT "標籤", -1, 10, 188, 40, 10
+    EDITTEXT IDC_GROUP_LABEL, 52, 185, 128, 15, ES_AUTOHSCROLL
+    CONTROL "監測此群組", IDC_GROUP_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 207, 170, 13
+    CONTROL "在工作列顯示", IDC_GROUP_VISIBLE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 225, 170, 13
+    LTEXT "可見群組上限", -1, 10, 249, 100, 12
+    COMBOBOX IDC_LIMIT, 10, 265, 100, 90, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    LTEXT "全部或 0-4096。隱藏群組仍可監測。", -1, 10, 288, 170, 29
+    LTEXT "所選群組的檢查項目", -1, 194, 9, 270, 12
+    LISTBOX IDC_CHECKS, 194, 24, 446, 68, LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP | WS_BORDER
+    PUSHBUTTON "新增檢查", IDC_CHECK_ADD, 194, 98, 69, 15
+    PUSHBUTTON "刪除檢查", IDC_CHECK_DELETE, 269, 98, 73, 15
+    LTEXT "名稱", -1, 194, 125, 43, 10
+    EDITTEXT IDC_CHECK_NAME, 245, 122, 213, 15, ES_AUTOHSCROLL
+    LTEXT "類型", -1, 471, 125, 28, 10
+    COMBOBOX IDC_CHECK_KIND, 506, 122, 134, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT "主機 / URL", -1, 194, 148, 48, 10
+    EDITTEXT IDC_CHECK_TARGET, 245, 145, 395, 15, ES_AUTOHSCROLL
+    LTEXT "TCP 連接埠", -1, 194, 172, 49, 10
+    EDITTEXT IDC_CHECK_PORT, 245, 169, 58, 15, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT "間隔（秒）", -1, 315, 172, 54, 10
+    EDITTEXT IDC_CHECK_INTERVAL, 372, 169, 60, 15, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT "逾時（毫秒）", -1, 448, 172, 70, 10
+    EDITTEXT IDC_CHECK_TIMEOUT, 523, 169, 117, 15, ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL "啟用", IDC_CHECK_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 194, 194, 105, 13
+    PUSHBUTTON "立即檢查（草稿）", IDC_TEST, 506, 191, 134, 17
+    LTEXT "手動檢查結果（不變更監測歷程）", -1, 194, 218, 446, 12
+    EDITTEXT IDC_RESULT, 194, 234, 446, 76, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
+    LTEXT "指示器顯示變更需要重新啟動 TrafficMonitor。檢查變更在儲存後生效。網路檢查在背景執行，可以關閉此視窗。", IDC_NOTICE, 10, 328, 470, 24
+    PUSHBUTTON "說明", IDC_OPEN_HELP, 10, 353, 68, 19
+    PUSHBUTTON "匯入 SSH...", IDC_IMPORT_SSH, 84, 353, 90, 19
+    PUSHBUTTON "預設群組", IDC_DEFAULT_GROUPS, 180, 353, 100, 19
+    DEFPUSHBUTTON "儲存", IDOK, 497, 353, 68, 19
+    PUSHBUTTON "取消", IDCANCEL, 572, 353, 68, 19
+END
+3500 DIALOGEX 0, 0, 560, 300
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "匯入 OpenSSH 主機"
+FONT 9, "Microsoft JhengHei UI"
+BEGIN
+    EDITTEXT IDC_SSH_PATH, 10, 10, 540, 15, ES_READONLY | ES_AUTOHSCROLL
+    LTEXT "新增至群組", -1, 10, 36, 90, 12
+    COMBOBOX IDC_SSH_GROUP, 108, 33, 300, 100, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL "", IDC_SSH_HOSTS, "SysListView32", LVS_REPORT | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 10, 58, 540, 177
+    LTEXT "勾選需要的主機。僅新增 TCP 連接埠檢查，不登入 SSH 或使用金鑰。略過項目與重複項目不會匯入。在設定中儲存後生效；取消將放棄匯入。", -1, 10, 242, 540, 26
+    DEFPUSHBUTTON "新增所選項目", IDOK, 382, 273, 90, 17
+    PUSHBUTTON "取消", IDCANCEL, 480, 273, 70, 17
+END
+3300 DIALOGEX 0, 0, 450, 280
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "NetWatch 說明"
+FONT 9, "Microsoft JhengHei UI"
+BEGIN
+    EDITTEXT IDC_HELP_TEXT, 10, 10, 430, 233, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON "關閉", IDOK, 372, 251, 68, 19
+END
+STRINGTABLE
+BEGIN
+    3200 "請輸入允許範圍內的整數。"
+    3201 "檢查資源已滿（最多同時 4 項，每秒啟動 4 項）。請稍後再試。"
+    3202 "正在背景檢查..."
+    3203 "無法儲存設定："
+    3204 "無法載入原設定。儲存將取代該檔案。"
+    3205 "已儲存。請重新啟動 TrafficMonitor，以套用指示器的名稱、標籤、順序、可見性和群組上限。在 TrafficMonitor 的工作列選項中啟用新增項目。"
+    3206 "全部"
+    3207 "新群組"
+    3208 "新檢查"
+    3209 "未預期的錯誤"
+    3217 "匯入 SSH 主機\r\n選擇已有的 OpenSSH 設定檔，預設位置為 Windows 使用者目錄的 .ssh/config。預覽 Host 別名、位址、連接埠，選擇目標群組並勾選需要的列。僅建立 TCP 連接埠檢查，不登入 SSH，不使用金鑰或執行命令。預設連接埠為 22，遵循 Host 模式與首個值優先規則。Include 支援本機路徑和檔名萬用字元；相對路徑基於使用者目錄的 .ssh。Match 不受支援。ProxyJump/ProxyCommand 及不支援的主機名稱變數會被略過。重複別名或位址/連接埠不會覆蓋同群組舊檢查。儲存前僅修改草稿。"
+    3218 "預設群組\r\n首次執行且沒有儲存的檔案時，建立空的 LOCAL、WEB 和 SSH 群組，名稱使用所選語言，不新增目標。「預設群組」僅向草稿新增缺少的標籤，保留現有群組、檢查和 ID，包括保留這些標籤的已重新命名群組。取消放棄新增內容，儲存則寫入設定。實際指示器清單變更需要重新啟動 TrafficMonitor。"
+    3219 "選擇 OpenSSH 設定檔"
+    3220 "建立新 SSH 群組"
+    3221 "找不到具體的 Host 別名。僅含萬用字元的 Host 區段可提供預設值，但無法列出主機。"
+    3222 "請至少勾選一個就緒主機。無法匯入略過項目和重複項目。"
+    3223 "SSH 主機已作為 TCP 檢查新增至草稿。請檢查並儲存以開始監測，或取消以放棄變更。"
+    3224 "缺少的預設群組已新增至草稿。原有標籤、群組和檢查項目均已保留。請儲存以保留變更。"
+    3225 "無法匯入 OpenSSH 設定："
+    3210 "入門\r\n群組將多個檢查項目彙總為一個工作列指示器。名稱用於在設定中識別群組，標籤顯示在圓點旁。選擇群組，新增檢查，設定類型和目標，然後儲存。不會自動新增公用目標。"
+    3211 "檢查類型\r\nICMP：輸入主機名稱或 IP 位址，不含 URL 前綴。檢查回應；某些主機即使服務正常也會封鎖 ICMP。TCP：輸入主機/IP 和連接埠，例如 127.0.0.1 和 80。連線成功僅表示連接埠接受連線，不保證應用程式正常。HTTP/HTTPS：輸入完整的 http:// 或 https:// URL。傳送 GET，僅 2xx 狀態視為成功，不跟隨重新導向。始終驗證 TLS 憑證。"
+    3212 "指示器顏色\r\n綠色：所有已啟用檢查均可用。黃色：部分可用，部分不可用。紅色：所有已啟用檢查均不可用。灰色：至少一項檢查沒有目前有效結果、沒有已啟用的檢查，或該群組監測已停用。連續失敗三次才確認不可用；成功一次即恢復可用。首次成功前的前兩次失敗仍顯示未知。已停用的檢查不參與彙總。"
+    3213 "間隔與逾時\r\n間隔為 1-86400 秒，決定檢查排程頻率；逾時為 100-30000 毫秒，限制網路操作時間。預設值為 30 秒和 2000 ms。系統/DNS 回呼清理可能耗時更長。結果過期後變灰；有效期為三個間隔與一個間隔加逾時中的較大值，同時考慮結果和最後一次成功的新鮮度。包括手動檢查在內，最多同時執行 4 項，每秒啟動 4 項。設定較大時可能延遲並變灰。"
+    3214 "監測與顯示\r\n「監測此群組」控制檢查執行。「在工作列顯示」和可見群組上限決定向主程式提供哪些指示器；隱藏群組仍可監測。「全部」表示不限，0 隱藏所有群組。變更實際指示器清單、名稱、標籤或順序需要重新啟動 TrafficMonitor。儲存時僅在待套用配置與已載入配置不同時提醒重新啟動。請在 TrafficMonitor 的工作列設定中啟用新增指示器。僅變更檢查項目時，儲存後即可生效，無需重新啟動。"
+    3215 "手動檢查與儲存\r\n「立即檢查（草稿）」檢查目前編輯內容，不儲存也不變更監測歷程。手動成功不會立即讓工作列圓點變綠。結果顯示 ICMP RTT、TCP 連線時間或 HTTP 標頭到達時間；「無資料」表示未取得測量值。HTTP 錯誤狀態也可能附有回應時間。儲存會寫入設定並套用監測變更，清除舊結果。取消放棄未儲存的編輯。關閉任一視窗不會取消背景檢查。按 F1 也可開啟說明；說明無需連網。"
+    3216 "檢查失敗時\r\nDNS 錯誤：檢查主機名稱與名稱解析。連線遭拒：檢查 TCP 連接埠和接聽服務。逾時：主機/服務可能無法連線、遭過濾，或回應超過設定的時限。TLS 錯誤：檢查 URL 主機、憑證信任和系統時間；不能略過憑證驗證。HTTP 錯誤：查看傳回的狀態碼。結果與提示保留原始數字錯誤碼。已儲存的群組和檢查名稱是使用者資料，不會自動翻譯。"
+END

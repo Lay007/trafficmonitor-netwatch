@@ -8,13 +8,13 @@ Updated: 2026-11-02. This is a prioritized work plan, not a release schedule or 
 - [x] ICMP, TCP and HTTP/HTTPS checks with stable group/check IDs and atomic configuration saves.
 - [x] Group indicators, failure hysteresis, stale-result handling and independent monitoring/display settings.
 - [x] Bounded workers and launch rate, module retention, concurrent reads and active-probe unload tests.
-- [x] Russian/English UI selected from the host language, with English fallback.
+- [x] English, Russian, Simplified Chinese and Traditional Chinese UI selected from the host language, with English fallback.
 - [x] Restart notices based on the effective indicator layout exported at load, including pending changes after reopening settings.
 - [x] Offline help through the Help button and F1, with localized resources and controller tests.
 - [x] Empty localized LOCAL, WEB and SSH defaults on first launch, with an explicit additive action for existing configurations.
 - [x] Local OpenSSH Host import with preview/selection, duplicate handling and TCP-check conversion; unsupported routes and syntax are explained rather than executed.
 
-These items describe implemented behavior. They do not imply that every desktop, theme or network scenario has been verified. The last full automated run passed 8/8 tests. Russian settings and SSH preview were visually inspected in the standalone DLL host; the full theme/DPI matrix and desktop inspection of the help window remain open. SSH endpoint import is distinct from the proposed NetWatch configuration export/import below.
+These items describe implemented behavior. They do not imply that every desktop, theme or network scenario has been verified. The last full automated run passed 8/8 tests. Russian settings/SSH preview, both Chinese settings layouts and Simplified Chinese help scrolling were visually inspected in the standalone DLL host. The full theme/DPI/font matrix, remaining desktop help combinations and native-speaker review remain open. SSH endpoint import is distinct from the proposed NetWatch configuration export/import below.
 
 ## P0: verification before a release candidate
 

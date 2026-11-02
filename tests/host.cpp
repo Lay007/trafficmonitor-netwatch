@@ -139,16 +139,18 @@ int wmain(int argc, wchar_t** argv) {
             preview->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, (directory / L"preview-config").c_str()); preview->OnInitialize(nullptr);
             preview->ShowOptionsDialog(nullptr); FreeLibrary(module); return 0;
         }
-        require(argc >= 3, "Usage: netwatch_host DLL config-directory [--ui]");
+        require(argc >= 3, "Usage: netwatch_host DLL config-directory [--ui|--ui-zh-cn|--ui-zh-tw]");
         const std::filesystem::path directory = std::filesystem::absolute(argv[2]);
         std::filesystem::create_directories(directory);
         if (argc == 5 && std::wstring(argv[3]) == L"--http") {
             http_lifetime(argv[1], directory, static_cast<unsigned>(std::stoul(argv[4]))); return 0;
         }
         if (argc == 4 && std::wstring(argv[3]) == L"--render") { render_and_layout(argv[1], directory); return 0; }
-        if (argc == 4 && std::wstring(argv[3]) == L"--ui") {
+        if (argc == 4 && (std::wstring(argv[3]) == L"--ui" || std::wstring(argv[3]) == L"--ui-zh-cn" || std::wstring(argv[3]) == L"--ui-zh-tw")) {
             ITMPlugin* plugin{}; auto module = load(argv[1], plugin);
-            plugin->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, directory.c_str()); plugin->OnInitialize(nullptr);
+            LanguageHost host; host.language = std::wstring(argv[3]) == L"--ui-zh-cn" ? 0x804 : 0x404;
+            plugin->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, directory.c_str());
+            plugin->OnInitialize(std::wstring(argv[3]) == L"--ui" ? nullptr : &host);
             plugin->ShowOptionsDialog(nullptr); FreeLibrary(module); return 0;
         }
         nw::Config config = nw::initial_config();
@@ -156,23 +158,23 @@ int wmain(int argc, wchar_t** argv) {
         auto c = nw::Check{}; c.id = nw::new_id(); c.target = L"192.0.2.1"; c.timeout_ms = 500;
         config.groups[0].checks.push_back(c);
         const auto config_path = directory / L"NetWatch.conf"; nw::save_config(config_path, config);
-        {
-            LanguageHost russian;
+        for (const auto& entry : {std::pair<unsigned short, const wchar_t*>{0x419, L"Локальные устройства"}, {0x804, L"本地设备"}, {0x404, L"本機裝置"}}) {
+            LanguageHost language_host; language_host.language = entry.first;
             ITMPlugin* fresh{}; auto fresh_module = load(argv[1], fresh);
             const auto fresh_dir = directory / nw::new_id();
-            fresh->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, fresh_dir.c_str()); fresh->OnInitialize(&russian);
+            fresh->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, fresh_dir.c_str()); fresh->OnInitialize(&language_host);
             require(fresh->GetItem(2) && !fresh->GetItem(3), "First launch must export three default groups");
-            require(std::wstring(fresh->GetItem(0)->GetItemName()) == L"Локальные устройства" && std::wstring(fresh->GetItem(2)->GetItemName()) == L"SSH", "Fresh groups do not follow host language");
+            require(std::wstring(fresh->GetItem(0)->GetItemName()) == entry.second && std::wstring(fresh->GetItem(2)->GetItemName()) == L"SSH", "Fresh groups do not follow host language");
             require(!std::filesystem::exists(fresh_dir), "First launch wrote configuration automatically");
             FreeLibrary(fresh_module);
         }
-        for (const unsigned short language : {static_cast<unsigned short>(0x419), static_cast<unsigned short>(0x409)}) {
-            LanguageHost host; host.language = language;
+        struct LanguageCase { unsigned short id; const wchar_t* untested; const wchar_t* description; };
+        for (const auto& language : {LanguageCase{0x419, L"ещё не проверено", L"Группы"}, LanguageCase{0x409, L"not tested", L"Network"}, LanguageCase{0x804, L"尚未检测", L"网络"}, LanguageCase{0x404, L"尚未檢查", L"網路"}}) {
+            LanguageHost host; host.language = language.id;
             ITMPlugin* localized{}; auto localized_module = load(argv[1], localized);
             localized->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, directory.c_str()); localized->OnInitialize(&host);
-            const bool russian = language == 0x419;
-            require(std::wstring(localized->GetTooltipInfo()).find(russian ? L"ещё не проверено" : L"not tested") != std::wstring::npos, "Actual DLL ignores host language");
-            require(std::wstring(localized->GetInfo(ITMPlugin::TMI_DESCRIPTION)).find(russian ? L"Группы" : L"Network") != std::wstring::npos, "Localized plugin description");
+            require(std::wstring(localized->GetTooltipInfo()).find(language.untested) != std::wstring::npos, "Actual DLL ignores host language");
+            require(std::wstring(localized->GetInfo(ITMPlugin::TMI_DESCRIPTION)).find(language.description) != std::wstring::npos, "Localized plugin description");
             require(std::wstring(localized->GetItem(0)->GetItemName()) == config.groups[0].name, "Language switch renamed configured group");
             FreeLibrary(localized_module);
         }
