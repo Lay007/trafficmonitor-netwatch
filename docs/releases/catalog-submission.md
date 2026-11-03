@@ -8,7 +8,7 @@ Do not submit this draft until the prerelease tag and asset links below exist an
 
 ### NetWatch
 
-Network availability groups for TrafficMonitor 1.86 x64 on Windows 10/11 x64. Monitor ICMP, TCP and HTTP/HTTPS checks using compact taskbar status circles, with live per-check results in settings. Import selected hosts from a local OpenSSH config as TCP port checks without SSH authentication or command execution. English, Russian, Simplified Chinese and Traditional Chinese are supported. No public targets are added automatically. This is a feedback prerelease; desktop/DPI/theme verification is incomplete.
+Monitor groups of devices and services with ICMP, TCP and HTTP/HTTPS checks. Each group appears as a label and status circle on the taskbar; settings show the result and response time for each check. Hosts can be imported from a local OpenSSH config as TCP port checks. Supports TrafficMonitor 1.86 x64 on Windows 10/11 x64, with English, Russian, Simplified Chinese and Traditional Chinese UI. This is a beta; desktop layout, DPI and theme checks are still incomplete.
 
 * Version: 0.1.0 (v0.1.0-beta.1 prerelease)
 * Author: [Lay007](https://github.com/Lay007)
@@ -19,7 +19,7 @@ Network availability groups for TrafficMonitor 1.86 x64 on Windows 10/11 x64. Mo
 
 ### NetWatch
 
-适用于 Windows 10/11 x64 和 TrafficMonitor 1.86 x64 的网络可用性分组插件。支持 ICMP、TCP 和 HTTP/HTTPS 检测，在任务栏以状态圆点显示分组可用性，并在设置中显示各检测项的实时结果。可从本地 OpenSSH 配置中选择主机并导入为 TCP 端口检测，不进行 SSH 身份验证或执行命令。支持英语、俄语、简体中文和繁体中文，不会自动添加公共检测目标。本版本为反馈测试用预发布版本，桌面布局、DPI 和主题验证尚未完成。
+按分组监测设备和服务，支持 ICMP、TCP 和 HTTP/HTTPS 检测。每个分组在任务栏显示名称和状态圆点，设置窗口中可查看各检测项的结果和响应时间。可从本地 OpenSSH 配置导入主机，生成 TCP 端口检测。适用于 Windows 10/11 x64 和 TrafficMonitor 1.86 x64，支持英语、俄语、简体中文和繁体中文界面。目前为测试版，桌面布局、DPI 和主题检查尚未完成。
 
 * 版本：0.1.0（v0.1.0-beta.1 预发布版）
 * 作者：[Lay007](https://github.com/Lay007)
@@ -34,14 +34,16 @@ Network availability groups for TrafficMonitor 1.86 x64 on Windows 10/11 x64. Mo
 
 ## Proposed PR title
 
-Add NetWatch network availability plugin (x64 prerelease)
+Add NetWatch network monitoring plugin
 
 ## Proposed PR body
 
-NetWatch adds user-defined availability groups to TrafficMonitor's taskbar with ICMP, TCP and HTTP/HTTPS checks, live per-check results in settings and optional local OpenSSH endpoint import. It supports TrafficMonitor 1.86 x64 and English, Russian, Simplified Chinese and Traditional Chinese UI.
+Adds NetWatch to the English and Chinese plugin lists and registers `NetWatch.dll` version `0.1.0` in the update index.
 
-This change adds English and Chinese download descriptions and registers `NetWatch.dll` version `0.1.0`. The linked `v0.1.0-beta.1` package is explicitly a feedback prerelease. Its new settings table has automated controller tests but no completed desktop/DPI/theme inspection; detailed verification limits are in the release notes.
+The plugin groups ICMP, TCP and HTTP/HTTPS checks into taskbar indicators. Settings show each check's state, response time and last error. It can also import OpenSSH hosts as TCP port checks without logging in. The target is TrafficMonitor 1.86 x64 on Windows 10/11 x64; the interface supports English, Russian and both Chinese variants.
 
 Source and download: https://github.com/Lay007/trafficmonitor-netwatch/releases/tag/v0.1.0-beta.1
 
-No public targets, SSH keys, authentication or command execution are added. The distribution includes the NetWatch MIT license and upstream Anti-996 interface license. If prereleases do not belong in the catalog/update index, please defer the entry until a stable release rather than treating this build as stable.
+This is the first beta. All nine automated tests pass, but the new settings table still needs desktop/DPI/theme checks. The release notes describe the remaining limits. The ZIP includes both the NetWatch MIT license and the upstream Anti-996 interface license.
+
+If the catalog only accepts stable releases, I can resubmit after a stable build.
