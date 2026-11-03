@@ -7,6 +7,20 @@
 #include <mutex>
 
 namespace nw {
+static std::wstring host_tooltip(std::wstring text, Language language) {
+    // MFC caps the combined host tooltip at 1024 UTF-16 code units.
+    // Reserve half for TrafficMonitor's metrics and other plugins.
+    constexpr size_t limit = 512;
+    if (text.size() <= limit) return text;
+    const std::wstring notice = translated(language, L"More in NetWatch settings.", L"Подробнее в настройках NetWatch.",
+        L"更多信息请查看 NetWatch 设置。", L"更多資訊請查看 NetWatch 設定。");
+    auto end = limit - notice.size() - 2;
+    const auto line = text.rfind(L"\r\n", end);
+    if (line != std::wstring::npos) end = line;
+    if (end && IS_HIGH_SURROGATE(text[end - 1])) --end;
+    text.resize(end); text += L"\r\n" + notice;
+    return text;
+}
 class Item final : public IPluginItem {
     Engine& engine;
     const std::wstring group_id, id, name, label;
@@ -114,7 +128,7 @@ public:
         auto text = engine.tooltip(language);
         std::lock_guard<std::mutex> lock(tooltip_mutex);
         if (!load_error.empty()) text += L"\r\n" + load_message();
-        auto& storage = tooltips[GetCurrentThreadId()]; storage = std::move(text); return storage.c_str();
+        auto& storage = tooltips[GetCurrentThreadId()]; storage = host_tooltip(std::move(text), language); return storage.c_str();
     }
     static void TMPluginAnchor() {}
 };

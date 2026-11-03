@@ -68,7 +68,7 @@ Click **Help** or press **F1** in settings for an offline guide covering setup, 
 
 The scheduler allows at most **four concurrent probe workers and four starts per second**, including manual tests. There is no worker per group and no permanent scheduler thread. TrafficMonitor's DataRequired callback dispatches due work; a check's interval is measured from completion to its next eligibility. With many checks, scheduling may be delayed and results can expire. Increase intervals or reduce enabled checks rather than interpreting an overloaded gray group as healthy.
 
-The tooltip is shared across the plugin because API v7 has no per-item tooltip. It includes group/check names, effective state, last raw error, typed measurement and local last-update time. Very large tooltips are truncated; individual checks can be tested in settings.
+The tooltip is shared across the plugin because API v7 has no per-item tooltip. It includes group/check names, effective state, last raw error, typed measurement and local last-update time when space permits. NetWatch limits its section to 512 UTF-16 code units and adds a localized notice when shortening it. TrafficMonitor's MFC tooltip has a 1024-character limit for the combined host and plugin text; the remaining space is shared with host metrics and other plugins. Other plugins can still exhaust that space. Individual checks can be tested in settings.
 
 ## Configuration and troubleshooting
 

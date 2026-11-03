@@ -40,6 +40,8 @@ The host owns its LoadLibrary reference and must stop calling plugin methods bef
 
 Returned item metadata uses immutable object-owned storage. Tooltip buffers are separate per calling OS thread, protected by a mutex and owned by the plugin rather than nontrivial thread_local objects. A tooltip pointer survives other threads' reads and background updates; it is valid until the same thread calls GetTooltipInfo again, exits, or the module actually unloads. Per-reader buffers remain allocated until unload; this is bounded for TrafficMonitor's fixed reader threads, not for a host that creates unbounded new reader thread IDs.
 
+The exported tooltip, including configuration-load errors, is capped at 512 UTF-16 code units. The host concatenates plugin text with its own metrics before calling MFC's `CToolTipCtrl::UpdateTipText`, which rejects combined text longer than 1024 characters. Truncation prefers complete lines, preserves surrogate pairs and appends a localized notice. API v7 provides no shared tooltip budget, so NetWatch cannot guarantee room for arbitrary text from other plugins.
+
 The configured deadline bounds the I/O wait budget. Cancellation still has to drain OS DNS providers and WinHTTP callbacks before releasing their state. Abnormal provider stalls can therefore defer cleanup beyond the budget; there is no unsafe forced-thread termination fallback.
 
 References: [FreeLibraryAndExitThread](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-freelibraryandexitthread), [DLL best practices](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-best-practices), [WinHTTP options](https://learn.microsoft.com/en-us/windows/win32/winhttp/option-flags).

@@ -1,6 +1,6 @@
 # Verification record
 
-Updated: 2026-11-02. This work did not modify installed TrafficMonitor or IPRegionMon files. The original 2026-10-29 integration observations below describe an earlier DLL. Repository publication and installed-host deployment are separate from the local follow-ups recorded here.
+Updated: 2026-11-03. This work did not modify installed TrafficMonitor or IPRegionMon files. The original 2026-10-29 integration observations below describe an earlier DLL. Repository publication and installed-host deployment are separate from the local follow-ups recorded here.
 
 ## Build and automated tests
 
@@ -14,7 +14,21 @@ cmake --build --preset release
 ctest --preset release --output-on-failure
 ```
 
-Latest full-suite run: **8/8 passed**, 26.40 seconds, on 2026-11-02 after adding both Chinese variants. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`. The preceding OpenSSH/default-groups run passed 8/8 (25.85 seconds), and the earlier help follow-up passed 7/7 (25.68 seconds).
+Latest full-suite run: **9/9 passed**, 27.23 seconds, on 2026-11-03 after fixing tooltip overflow. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`. The preceding Chinese-language run passed 8/8 (26.40 seconds), OpenSSH/default-groups passed 8/8 (25.85 seconds), and the earlier help follow-up passed 7/7 (25.68 seconds).
+
+### Repeated invalid-argument dialogs after SSH import (2026-11-03)
+
+Reproduced in a disposable source-built V1.86 Lite host with the production DLL: native file selection, import nine synthetic SSH hosts (`127.0.0.1`, TCP ports 20000-20008), Save, close settings, then continue normal host monitoring. The host repeatedly displayed `Недопустимый аргумент.`. A main-thread exception stack reached `CTrafficMonitorDlg::OnMonitorInfoUpdated`, which updates the combined tooltip. The installed MFC source (`tooltip.cpp`, `CToolTipCtrl::UpdateTipText`) rejects text over 1024 characters with `ENSURE_ARG`. NetWatch previously allowed over 12000 characters. Cancelling file selection with an empty configuration did not reproduce the error; opening the picker alone was insufficient.
+
+The exported NetWatch section now has a 512 UTF-16-code-unit budget, including load-error text and a localized truncation notice. Whole-line truncation and surrogate-pair preservation keep returned text valid. The unused half is shared with TrafficMonitor and other plugins; API v7 cannot reserve or inspect their combined budget.
+
+The new `tooltip_budget` test loads the actual DLL with nine long check names and Unicode supplementary characters in all four languages. It failed before the fix (`Plugin tooltip exceeds its share of the host's 1024-character limit`) and passed afterward. Existing tests still cover short localized tooltips and pointer lifetime across readers.
+
+The original native-import scenario was rerun with only the plugin DLL replaced in the same GDI fixture. Before the fix the driver stopped at the third identical host error (exit code 19). After the fix all nine checks persisted, settings returned, and the host ran for 45 seconds after closure without an error dialog, reaching the completion marker (exit code 0). The diagnostic driver uses `ExitProcess` at completion; these codes do not verify graceful shutdown. An import-address shim preselects the synthetic file before calling the real `GetOpenFileNameW`; file parsing, preview, Save, probe scheduling and host tooltip code remain real. Earlier attempts that cancelled the chooser or posted Save before preview acceptance are not counted as successful import reproductions.
+
+Ignored diagnostic artifacts: `.work/repro-import-close-8321958511494c83a9ff6d3ed73593e4/TrafficMonitor/`, including `before-fix-native-three-errors.log` and `NetWatch-repro.log`. The instrumented test-host SHA-256 is `580d5fff0e9b7fe6b669f9130004d4bf4d0e9e548522c62fe46c7714b61e3538`. This is a source-built, instrumented GDI host, not certification of the installed/pristine binary or D2D. The installed TrafficMonitor and other plugins were not changed.
+
+Current Release DLL SHA-256: `d6e1ee7e873b1d92a3781730a2461145352a8d38124d71813d6fee613dcff277`.
 
 ### Simplified and Traditional Chinese (2026-11-02)
 
@@ -24,7 +38,7 @@ Tests check LANGID precedence and regional mappings, nonempty Chinese resource s
 
 Visual inspection used the actual Release DLL in the standalone host with explicit test-only `--ui-zh-cn`/`--ui-zh-tw` language flags and disposable `.work/` directories. Both Chinese settings windows displayed readable glyphs and accessible controls without obvious clipping on the current desktop. Simplified Chinese help opened by button, scrolled to SSH/default-group sections and closed; the settings window then closed through Cancel. Traditional Chinese settings also closed through Cancel. Both preview processes returned zero. No system/installed-host language or configuration was changed. This does not certify every DPI, theme, fallback font or native-speaker wording choice.
 
-Current Release DLL SHA-256: `28f52ed53783fd9969f1f8b5c379816ce3a8908958ce12c7423abdc53373d137`.
+Chinese-language Release DLL SHA-256, before the tooltip fix: `28f52ed53783fd9969f1f8b5c379816ce3a8908958ce12c7423abdc53373d137`.
 
 ### OpenSSH import and default groups (2026-11-02)
 
@@ -70,6 +84,7 @@ Save-notice/localization DLL SHA-256, before the help addition: `eafe5a3685671d9
 | core | Group/check IDs, order and visibility limits, UTF-8/Unicode and Windows BOM/CRLF config round trips, atomic rejection of invalid saves, malformed config rejection, three-failure debounce, one-success recovery, stale-green expiry, mixed/disabled/empty/unknown aggregation |
 | ssh_import | Bounded OpenSSH reading, supported matching/precedence/Include behavior, unsupported syntax/routes, duplicate-safe TCP conversion, localized empty defaults and preservation of existing configurations |
 | plugin_host | Actual LoadLibrary/GetProcAddress export, singleton, API v7 virtual slots, item boundaries/IDs, GDI calls, concurrent getter calls, returned-pointer stability, release during a probe, eventual unload, 100 reloads and handle/GDI counts |
+| tooltip_budget | Actual DLL output capped at 512 UTF-16 code units for a large configuration, localized truncation notice in all four languages, valid surrogate pairs |
 | render_and_layout | Actual DLL probes produce green/yellow/red/gray circles, checked by GDI bitmap pixels; item pointer and ID remain stable until unload; zero visible groups applies after reload |
 | network | Open/refused IPv4 TCP, IPv6 TCP, IPv4/IPv6 ICMP success, invalid-name DNS failure, explicit TEST-NET ICMP timeout, HTTP 200/503/302, total HTTP timeout, untrusted TLS rejection, no TLS downgrade, 256 hidden groups with four-worker cap, config edits during blocked requests, obsolete-result rejection, eight concurrent readers, manual testing |
 | provenance | Exact pinned upstream header and license bytes |

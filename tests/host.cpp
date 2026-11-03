@@ -40,6 +40,31 @@ static unsigned thread_count() {
     if (Thread32First(snapshot, &entry)) do { count += entry.th32OwnerProcessID == GetCurrentProcessId(); } while (Thread32Next(snapshot, &entry));
     CloseHandle(snapshot); return count;
 }
+static void tooltip_budget(const wchar_t* dll, const std::filesystem::path& directory) {
+    auto config = nw::initial_config();
+    config.groups[0].name = std::wstring(126, L'G') + L"\U0001F680";
+    for (int i = 0; i < 9; ++i) {
+        nw::Check check; check.id = nw::new_id(); check.kind = nw::Kind::Tcp;
+        check.name = std::wstring(126, L'C') + L"\U0001F680";
+        config.groups[0].checks.push_back(check);
+    }
+    nw::save_config(directory / L"NetWatch.conf", config);
+    for (const auto& language : {std::pair<unsigned short, const wchar_t*>{0x409, L"More in NetWatch settings."},
+        {0x419, L"Подробнее в настройках NetWatch."}, {0x804, L"更多信息请查看 NetWatch 设置。"}, {0x404, L"更多資訊請查看 NetWatch 設定。"}}) {
+        LanguageHost host; host.language = language.first;
+        ITMPlugin* plugin{}; const auto module = load(dll, plugin);
+        plugin->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, directory.c_str()); plugin->OnInitialize(&host);
+        const std::wstring text = plugin->GetTooltipInfo();
+        require(text.size() <= 512, "Plugin tooltip exceeds its share of the host's 1024-character limit");
+        require(text.find(L"NetWatch") == 0 && text.find(language.second) != std::wstring::npos, "Truncated tooltip lacks localized notice");
+        for (size_t i = 0; i < text.size(); ++i) {
+            if (IS_HIGH_SURROGATE(text[i])) require(++i < text.size() && IS_LOW_SURROGATE(text[i]), "Tooltip split a UTF-16 pair");
+            else require(!IS_LOW_SURROGATE(text[i]), "Tooltip contains an isolated low surrogate");
+        }
+        FreeLibrary(module);
+    }
+    std::cout << "PASS actual DLL bounded multilingual tooltips for large SSH-style configurations\n";
+}
 static void render_and_layout(const wchar_t* dll, const std::filesystem::path& directory) {
     nw::Config config;
     for (int i = 0; i < 4; ++i) {
@@ -142,6 +167,7 @@ int wmain(int argc, wchar_t** argv) {
         require(argc >= 3, "Usage: netwatch_host DLL config-directory [--ui|--ui-zh-cn|--ui-zh-tw]");
         const std::filesystem::path directory = std::filesystem::absolute(argv[2]);
         std::filesystem::create_directories(directory);
+        if (argc == 4 && std::wstring(argv[3]) == L"--tooltip") { tooltip_budget(argv[1], directory); return 0; }
         if (argc == 5 && std::wstring(argv[3]) == L"--http") {
             http_lifetime(argv[1], directory, static_cast<unsigned>(std::stoul(argv[4]))); return 0;
         }
