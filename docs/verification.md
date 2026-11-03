@@ -16,6 +16,16 @@ ctest --preset release --output-on-failure
 
 Latest full-suite run: **9/9 passed**, 29.93 seconds, on 2026-11-03 after adding live check status in settings. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`. The preceding tooltip-overflow fix passed 9/9 (27.23 seconds), Chinese-language run passed 8/8 (26.40 seconds), OpenSSH/default-groups passed 8/8 (25.85 seconds), and the earlier help follow-up passed 7/7 (25.68 seconds).
 
+### Prerelease package preparation (2026-11-03)
+
+Prepared `v0.1.0-beta.1` as a feedback prerelease, retaining numeric DLL/catalog version `0.1.0`. Packaging changes do not alter plugin source or DLL bytes from the live-table build below. The allowlisted ZIP includes the DLL, installation instructions, release notes, both license texts, notices, selected documentation/evidence and a file-hash manifest. It excludes TrafficMonitor executables, runtime installers, private notes and user configuration. The separate `SHA256SUMS.txt` identifies the exact ZIP; the DLL hash remains the Current Release DLL hash recorded below.
+
+The initial packaged DLL was extracted and passed the existing ABI host (API v7/export/GDI/concurrent reads/active unload/100 reloads) and all-four-language tooltip-budget regression. Every manifest file hash and ZIP CRC was checked against the packaged bytes. Authenticode inspection returned `NotSigned`; SHA-256 is not a signing certificate. Final candidate hashes are retained with the ignored output artifacts, avoiding an archive-hash self-reference inside this bundled document.
+
+English/Chinese descriptions and the numeric XML entry were prepared as a three-file patch against TrafficMonitorPlugins commit `eb7fc9e56f93fb69c99b185c6b8c395153d78bc6`. XML parsing found exactly one `NetWatch.dll` entry with version `0.1.0`; `git apply --cached --check` against the unchanged upstream index succeeded. The upstream [submission instructions](https://github.com/zhongyang219/TrafficMonitorPlugins/blob/main/README.md#插件的提交) were checked through the GitHub connector. The patch links the explicit prerelease tag, not `/releases/latest`.
+
+At preparation time the public repository had no release/tag for this candidate. No release, tag, public asset, upstream PR or email was published. Existing desktop/DPI/D2D/soak limitations remain open and are stated in the package and catalog text. See [publication order](releases/README.md) for the separate authorization and post-publication checks.
+
 ### Live check status in settings (2026-11-03)
 
 Replaced the check-name list with a five-column report ListView: Name, State, Time in milliseconds with ICMP/TCP/HTTP prefix, Last result and Checked. The UI polls copied engine snapshots every 500 ms without dispatching network work. Disabled, unknown, running, stale and unsaved rows are distinguished. Drafts are compared by UUID and saved definition, including the current unfinished editor fields; results from another destination or configuration generation are not shown as current draft results. Manual test output remains separate. The list area is taller and the scrollable manual-result area shorter; the dialog's outer dimensions are unchanged.

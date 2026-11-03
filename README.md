@@ -4,6 +4,8 @@ NetWatch is a Windows x64 C++ plugin for TrafficMonitor 1.86. It monitors user-d
 
 See the [improvement and work plan](docs/roadmap.md) for priorities and acceptance criteria, and the [verification record](docs/verification.md) for actual results and remaining limits.
 
+The initial feedback prerelease is being prepared as `v0.1.0-beta.1`; see [release notes, packaging and catalog submission](docs/releases/README.md). This preparation does not imply a published GitHub release or an accepted catalog listing.
+
 | Circle | Meaning |
 | --- | --- |
 | Green | All enabled checks are Up |

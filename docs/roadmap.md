@@ -71,11 +71,13 @@ These features require a separate implementation decision after P0/P1; they are 
 
 - [ ] Resolve P0 findings, or explicitly document and review any remaining release limitations.
 - [ ] Configure/build Release, run the relevant automated suite, inspect the diff and scan tracked files for secrets and private evidence.
-- [ ] Create a fresh ZIP from the verified DLL, licenses, notices and current user documentation; generate its SHA-256 file and verify the packaged DLL hash. Do not reuse an older archive after rebuilding the DLL.
-- [ ] Prepare release notes listing supported host/architecture, changes, installation steps and actual verification limits.
+- [x] Create a fresh ZIP from the verified DLL, licenses, notices and current user documentation; generate its SHA-256 file and verify the packaged DLL hash. Do not reuse an older archive after rebuilding the DLL.
+- [x] Prepare release notes listing supported host/architecture, changes, installation steps and actual verification limits.
 - [ ] Obtain explicit publication authorization, then publish the intended commits/tag/release and verify the downloadable artifact.
 
 Building, committing, pushing and publishing a release are separate actions. Keep test hosts under `.work/`, private research/evidence under ignored `.private/`, and installed TrafficMonitor/IPRegionMon untouched.
+
+The prepared feedback candidate is `v0.1.0-beta.1`; [release materials](releases/README.md) include packaging instructions and an English/Chinese catalog-submission draft. Publication, downloadable-asset verification and upstream submission remain pending.
 
 ## Constraints for every implementation
 
