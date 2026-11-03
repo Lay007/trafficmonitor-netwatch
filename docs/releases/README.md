@@ -1,5 +1,13 @@
 # Prerelease preparation and publication
 
+## Published beta
+
+[v0.1.0-beta.1](https://github.com/Lay007/trafficmonitor-netwatch/releases/tag/v0.1.0-beta.1) was published on 2026-11-03 as a prerelease, with tag `v0.1.0-beta.1` at source commit `2a15fd08ea408e65248290970faf34880b39e977`. Both public assets were downloaded without authentication and matched the reviewed local files.
+
+- ZIP SHA-256: `f82cd25bec9ab4b050f4ef33cdd1de4d6d0e8d5d54fa97366105fc0a8cc7f460`.
+- Packaged DLL SHA-256: `1f862ce53be680e052bec00663e65cc762da97881d3194a6c6930af7be9f5c91`.
+- Catalog PR: [TrafficMonitorPlugins #193](https://github.com/zhongyang219/TrafficMonitorPlugins/pull/193), open at publication time. It changes three files, adding 17 lines. The catalog entry is not yet accepted.
+
 ## Prepared candidate
 
 - Tag/title: `v0.1.0-beta.1` / `NetWatch v0.1.0-beta.1`.
@@ -26,7 +34,7 @@ Use `manifest.json` and `SHA256SUMS.txt` from the generated output to identify t
 
 ## Publication order
 
-These are pending external actions, not steps performed by the package builder:
+The publication steps below were completed for the beta above. They are separate from the package builder; upstream review/merge remains pending.
 
 1. Obtain authorization to push the prepared commits and publish this exact candidate. Review the incomplete P0 checks and explicit prerelease limitations.
 2. Push the intended source revision and create `v0.1.0-beta.1` at that revision. Create a GitHub release with **prerelease enabled**, using the prepared text and the two release assets. Do not mark this candidate as stable/latest.

@@ -24,7 +24,17 @@ The initial packaged DLL was extracted and passed the existing ABI host (API v7/
 
 English/Chinese descriptions and the numeric XML entry were prepared as a three-file patch against TrafficMonitorPlugins commit `eb7fc9e56f93fb69c99b185c6b8c395153d78bc6`. XML parsing found exactly one `NetWatch.dll` entry with version `0.1.0`; `git apply --cached --check` against the unchanged upstream index succeeded. The upstream [submission instructions](https://github.com/zhongyang219/TrafficMonitorPlugins/blob/main/README.md#插件的提交) were checked through the GitHub connector. The patch links the explicit prerelease tag, not `/releases/latest`.
 
-At preparation time the public repository had no release/tag for this candidate. No release, tag, public asset, upstream PR or email was published. Existing desktop/DPI/D2D/soak limitations remain open and are stated in the package and catalog text. See [publication order](releases/README.md) for the separate authorization and post-publication checks.
+At the end of preparation the public repository had no release/tag for this candidate. No external publication was performed during that step. Existing desktop/DPI/D2D/soak limitations remain open and are stated in the package and catalog text.
+
+### Beta publication (2026-11-03)
+
+After explicit user authorization, pushed the source commits and tag `v0.1.0-beta.1` at `2a15fd08ea408e65248290970faf34880b39e977`. Published [NetWatch v0.1.0-beta.1](https://github.com/Lay007/trafficmonitor-netwatch/releases/tag/v0.1.0-beta.1) with `draft=false`, `prerelease=true` and `make_latest=false`. The release description and catalog text were shortened before publication; the reviewed ZIP/DLL bytes were unchanged.
+
+Downloaded both public assets without authentication and compared their bytes with the reviewed local files. ZIP: 181465 bytes, SHA-256 `f82cd25bec9ab4b050f4ef33cdd1de4d6d0e8d5d54fa97366105fc0a8cc7f460`. `SHA256SUMS.txt`: 106 bytes, SHA-256 `3c690217068972df9bcd42b6d092fc2fb6b5f55b7187980b55884fa608c28c72`. All 15 payload hashes in the downloaded ZIP's manifest matched, including DLL SHA-256 `1f862ce53be680e052bec00663e65cc762da97881d3194a6c6930af7be9f5c91`. The tag and manifest source revision matched.
+
+Created [TrafficMonitorPlugins PR #193](https://github.com/zhongyang219/TrafficMonitorPlugins/pull/193) from `Lay007:add-netwatch-v0.1.0-beta.1`, commit `870ea837c0f54e94958a956abd57af20a897e890`. It is open, not a draft, authored by Lay007, with three changed files, 17 additions and no deletions. Both download-page descriptions and the XML version entry were reviewed against upstream main `eb7fc9e56f93fb69c99b185c6b8c395153d78bc6`. Acceptance and merge remain the maintainer's decision; no catalog acceptance is claimed.
+
+Publication used the reviewed artifacts and did not rebuild or deploy the DLL. No installed TrafficMonitor/IPRegionMon instance or personal configuration was changed. The previously recorded automated tests and remaining visual/network/lifecycle limits still apply.
 
 ### Live check status in settings (2026-11-03)
 

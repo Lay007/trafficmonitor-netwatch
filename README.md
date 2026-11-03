@@ -4,7 +4,7 @@ NetWatch is a Windows x64 C++ plugin for TrafficMonitor 1.86. It monitors user-d
 
 See the [improvement and work plan](docs/roadmap.md) for priorities and acceptance criteria, and the [verification record](docs/verification.md) for actual results and remaining limits.
 
-The initial feedback prerelease is being prepared as `v0.1.0-beta.1`; see [release notes, packaging and catalog submission](docs/releases/README.md). This preparation does not imply a published GitHub release or an accepted catalog listing.
+Download [v0.1.0-beta.1](https://github.com/Lay007/trafficmonitor-netwatch/releases/tag/v0.1.0-beta.1), the first beta for Windows x64. The new settings table still needs desktop/DPI/theme checks. See [release notes and verification](docs/releases/README.md) before installing. The [catalog submission](https://github.com/zhongyang219/TrafficMonitorPlugins/pull/193) is awaiting review.
 
 | Circle | Meaning |
 | --- | --- |
@@ -119,4 +119,4 @@ Source layout: `model/config` hold policy and persistence; `probes` owns network
 
 ## Licensing
 
-The proposed license for original NetWatch code is MIT; see [LICENSE](LICENSE). The unmodified TrafficMonitor interface retains its own [Anti-996 License](vendor/TrafficMonitor.LICENSE) and original attribution. The combined distribution must retain and comply with both notices; it is not MIT-only. See [third-party notices](THIRD_PARTY_NOTICES.md). No Ping Plugin or IPRegionMon implementation was copied. Nothing is pushed or published by the build.
+Original NetWatch code is licensed under MIT; see [LICENSE](LICENSE). The unmodified TrafficMonitor interface retains its own [Anti-996 License](vendor/TrafficMonitor.LICENSE) and original attribution. The combined distribution must retain and comply with both notices; it is not MIT-only. See [third-party notices](THIRD_PARTY_NOTICES.md). No Ping Plugin or IPRegionMon implementation was copied. Nothing is pushed or published by the build.
