@@ -10,6 +10,11 @@ struct ManualResult {
     bool done{};
     Result result;
 };
+struct CheckSnapshot {
+    Check check;
+    bool monitored{}, running{};
+    std::optional<History> history;
+};
 class Engine {
     struct State;
     std::shared_ptr<State> state;
@@ -20,6 +25,7 @@ public:
     void dispatch();
     bool manual(Check check, std::shared_ptr<ManualResult> result);
     Health group_health(const std::wstring& id) const;
+    std::vector<CheckSnapshot> checks(const std::wstring& group_id) const;
     std::wstring tooltip(Language language = Language::English) const;
     unsigned active() const;
 };

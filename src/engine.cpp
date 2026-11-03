@@ -123,6 +123,23 @@ Health Engine::group_health(const std::wstring& id) const {
     for (const auto& group : state->config.groups) if (group.id == id) return aggregate(group, state->results, Clock::now());
     return Health::Unknown;
 }
+std::vector<CheckSnapshot> Engine::checks(const std::wstring& group_id) const {
+    std::vector<CheckSnapshot> snapshot;
+    std::lock_guard<std::mutex> lock(state->mutex);
+    for (const auto& group : state->config.groups) if (group.id == group_id) {
+        snapshot.reserve(group.checks.size());
+        for (const auto& check : group.checks) {
+            CheckSnapshot item; item.check = check; item.monitored = group.enabled && check.enabled;
+            const auto runtime = state->runtime.find(check.id);
+            item.running = runtime != state->runtime.end() && runtime->second.running;
+            const auto history = state->results.find(check.id);
+            if (history != state->results.end()) item.history = history->second;
+            snapshot.push_back(std::move(item));
+        }
+        break;
+    }
+    return snapshot;
+}
 std::wstring Engine::tooltip(Language language) const {
     std::lock_guard<std::mutex> lock(state->mutex);
     std::wstring text = L"NetWatch";

@@ -90,6 +90,7 @@ static void core() {
     record(h, good, now); require(health(check, &h, now) == Health::Up, "One-success recovery");
     record(h, bad, now); require(health(check, &h, now) == Health::Up, "Transient failure after success");
     require(health(check, &h, now + std::chrono::seconds(91)) == Health::Unknown, "Stale green");
+    require(stale(check, h, now + std::chrono::seconds(91)) && !stale(check, h, now), "Explicit result freshness");
     Group group; group.checks = {check}; std::map<std::wstring, History> results{{check.id, h}};
     require(aggregate(group, results, now) == Health::Up, "All successful");
     auto other = make_check(); group.checks.push_back(other);
@@ -137,9 +138,12 @@ static void network(int tcp_port, int closed_port, int http_port, int tls_port, 
     Engine engine(config);
     for (int i = 0; i < 20; ++i) engine.dispatch();
     require(engine.active() == 4, "Group count did not respect four-worker cap");
+    const auto running = engine.checks(config.groups[0].id);
+    require(running.size() == 1 && running[0].running && running[0].monitored && !running[0].history, "In-flight monitoring snapshot");
     auto manual = std::make_shared<ManualResult>(); require(!engine.manual(c, manual), "Manual test exceeded cap");
     const auto before_apply = Clock::now();
     engine.apply(initial_config());
+    require(engine.checks(config.groups[0].id).empty(), "Removed group retained a monitoring snapshot");
     require(Clock::now() - before_apply < std::chrono::milliseconds(100), "Config blocked behind network");
     std::atomic<bool> failed{false};
     std::vector<std::thread> readers;

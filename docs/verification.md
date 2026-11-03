@@ -14,7 +14,19 @@ cmake --build --preset release
 ctest --preset release --output-on-failure
 ```
 
-Latest full-suite run: **9/9 passed**, 27.23 seconds, on 2026-11-03 after fixing tooltip overflow. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`. The preceding Chinese-language run passed 8/8 (26.40 seconds), OpenSSH/default-groups passed 8/8 (25.85 seconds), and the earlier help follow-up passed 7/7 (25.68 seconds).
+Latest full-suite run: **9/9 passed**, 29.93 seconds, on 2026-11-03 after adding live check status in settings. Logs remain in the ignored `build/Testing/Temporary/LastTest.log`. The preceding tooltip-overflow fix passed 9/9 (27.23 seconds), Chinese-language run passed 8/8 (26.40 seconds), OpenSSH/default-groups passed 8/8 (25.85 seconds), and the earlier help follow-up passed 7/7 (25.68 seconds).
+
+### Live check status in settings (2026-11-03)
+
+Replaced the check-name list with a five-column report ListView: Name, State, Time in milliseconds with ICMP/TCP/HTTP prefix, Last result and Checked. The UI polls copied engine snapshots every 500 ms without dispatching network work. Disabled, unknown, running, stale and unsaved rows are distinguished. Drafts are compared by UUID and saved definition, including the current unfinished editor fields; results from another destination or configuration generation are not shown as current draft results. Manual test output remains separate. The list area is taller and the scrollable manual-result area shorter; the dialog's outer dimensions are unchanged.
+
+The real hidden Russian dialog/controller test drives actual loopback ICMP and invalid-name DNS monitoring until success and three-failure Down. It verifies typed measurements, raw DNS codes, failure count and local timestamp; disabled and untested rows; unsaved/new destinations without inherited results; selection recovery after an invalid edit; preserved unfinished fields during timer updates; reverted edits; independent manual history; stale-result display after stopping dispatch; live generation resets; changed saved definitions with the same UUID; and worker drain after closure. The network test also observes an in-flight HTTP snapshot and removal of its group on apply. Existing model/aggregation tests pass with the shared freshness predicate.
+
+English and both Chinese native resources are instantiated by the existing controller suite; monitoring headers, Chinese Unsaved states and the new help paragraphs are asserted. Resource strings now use their full resource length rather than a 1024-character buffer. Intermediate checks caught the omitted Russian help paragraph and shell-corrupted translation text; only the final corrected UTF-8 resources and passing run are counted. `git diff --check` passed.
+
+Desktop inspection could not run: the computer-use helper returned `failed to connect native pipe` / Windows error 2 on the initial call, retry and retry after resetting its runtime. The prepared synthetic preview under ignored `.work/live-status-ui-*/` was not launched. No visual/DPI/theme certification of the new table is claimed. The standalone DLL preview host now dispatches monitoring on a background thread so a later manual inspection can observe live saved results. Installed TrafficMonitor and IPRegionMon were not modified.
+
+Current Release DLL SHA-256: `1f862ce53be680e052bec00663e65cc762da97881d3194a6c6930af7be9f5c91`.
 
 ### Repeated invalid-argument dialogs after SSH import (2026-11-03)
 
@@ -28,7 +40,7 @@ The original native-import scenario was rerun with only the plugin DLL replaced 
 
 Ignored diagnostic artifacts: `.work/repro-import-close-8321958511494c83a9ff6d3ed73593e4/TrafficMonitor/`, including `before-fix-native-three-errors.log` and `NetWatch-repro.log`. The instrumented test-host SHA-256 is `580d5fff0e9b7fe6b669f9130004d4bf4d0e9e548522c62fe46c7714b61e3538`. This is a source-built, instrumented GDI host, not certification of the installed/pristine binary or D2D. The installed TrafficMonitor and other plugins were not changed.
 
-Current Release DLL SHA-256: `d6e1ee7e873b1d92a3781730a2461145352a8d38124d71813d6fee613dcff277`.
+Tooltip-fix Release DLL SHA-256, before the live settings table: `d6e1ee7e873b1d92a3781730a2461145352a8d38124d71813d6fee613dcff277`.
 
 ### Simplified and Traditional Chinese (2026-11-02)
 
@@ -80,7 +92,7 @@ Save-notice/localization DLL SHA-256, before the help addition: `eafe5a3685671d9
 
 | Test | Actual coverage |
 | --- | --- |
-| settings | Hidden real dialog resource/controller: add, rename, reorder, delete, stable IDs, checks, independent visibility/monitoring, zero display limit, numeric validation, manual draft result polling, destroy dialog during pending ICMP |
+| settings | Hidden real dialog resource/controller: editing, stable IDs, visibility/monitoring, limits, validation, live monitoring table with success/failure/stale/disabled/unsaved rows, preserved selection/edits, generation reset, independent manual result polling and close during pending ICMP |
 | core | Group/check IDs, order and visibility limits, UTF-8/Unicode and Windows BOM/CRLF config round trips, atomic rejection of invalid saves, malformed config rejection, three-failure debounce, one-success recovery, stale-green expiry, mixed/disabled/empty/unknown aggregation |
 | ssh_import | Bounded OpenSSH reading, supported matching/precedence/Include behavior, unsupported syntax/routes, duplicate-safe TCP conversion, localized empty defaults and preservation of existing configurations |
 | plugin_host | Actual LoadLibrary/GetProcAddress export, singleton, API v7 virtual slots, item boundaries/IDs, GDI calls, concurrent getter calls, returned-pointer stability, release during a probe, eventual unload, 100 reloads and handle/GDI counts |

@@ -104,12 +104,15 @@ void record(History& history, const Result& result, Clock::time_point now) {
         history.failures = 0; history.last_success = now; history.ever_succeeded = true;
     } else history.failures = (std::min)(history.failures + 1, 3u);
 }
+bool stale(const Check& check, const History& history, Clock::time_point now) {
+    const auto expiry = std::chrono::milliseconds((std::max)(3ull * check.interval_ms, 1ull * check.interval_ms + check.timeout_ms));
+    return history.has_result && (now - history.received >= expiry ||
+        (history.failures < 3 && history.ever_succeeded && now - history.last_success >= expiry));
+}
 Health health(const Check& check, const History* h, Clock::time_point now) {
-    if (!check.enabled || !h || !h->has_result) return Health::Unknown;
-    const auto stale = std::chrono::milliseconds((std::max)(3ull * check.interval_ms, 1ull * check.interval_ms + check.timeout_ms));
-    if (now - h->received >= stale) return Health::Unknown;
+    if (!check.enabled || !h || !h->has_result || stale(check, *h, now)) return Health::Unknown;
     if (h->failures >= 3) return Health::Down;
-    if (!h->ever_succeeded || now - h->last_success >= stale) return Health::Unknown;
+    if (!h->ever_succeeded) return Health::Unknown;
     return Health::Up;
 }
 Health aggregate(const Group& group, const std::map<std::wstring, History>& results, Clock::time_point now) {

@@ -58,6 +58,7 @@ std::wstring validate(const Config& config, Language language = Language::Englis
 std::vector<Group> visible_groups(const Config& config);
 bool display_changed(const std::vector<Group>& exported, const Config& desired);
 void record(History& history, const Result& result, Clock::time_point now);
+bool stale(const Check& check, const History& history, Clock::time_point now);
 Health health(const Check& check, const History* history, Clock::time_point now);
 Health aggregate(const Group& group, const std::map<std::wstring, History>& results, Clock::time_point now);
 const wchar_t* health_text(Health value, Language language = Language::English);

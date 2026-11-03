@@ -20,25 +20,25 @@ BEGIN
     COMBOBOX IDC_LIMIT, 10, 265, 100, 90, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
     LTEXT "全部或 0-4096。隐藏分组仍可监测。", -1, 10, 288, 170, 29
     LTEXT "所选分组的检测项", -1, 194, 9, 270, 12
-    LISTBOX IDC_CHECKS, 194, 24, 446, 68, LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP | WS_BORDER
-    PUSHBUTTON "添加检测", IDC_CHECK_ADD, 194, 98, 69, 15
-    PUSHBUTTON "删除检测", IDC_CHECK_DELETE, 269, 98, 73, 15
-    LTEXT "名称", -1, 194, 125, 43, 10
-    EDITTEXT IDC_CHECK_NAME, 245, 122, 213, 15, ES_AUTOHSCROLL
-    LTEXT "类型", -1, 471, 125, 28, 10
-    COMBOBOX IDC_CHECK_KIND, 506, 122, 134, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT "主机 / URL", -1, 194, 148, 48, 10
-    EDITTEXT IDC_CHECK_TARGET, 245, 145, 395, 15, ES_AUTOHSCROLL
-    LTEXT "TCP 端口", -1, 194, 172, 49, 10
-    EDITTEXT IDC_CHECK_PORT, 245, 169, 58, 15, ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT "间隔（秒）", -1, 315, 172, 54, 10
-    EDITTEXT IDC_CHECK_INTERVAL, 372, 169, 60, 15, ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT "超时（毫秒）", -1, 448, 172, 70, 10
-    EDITTEXT IDC_CHECK_TIMEOUT, 523, 169, 117, 15, ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL "启用", IDC_CHECK_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 194, 194, 105, 13
-    PUSHBUTTON "立即检测（草稿）", IDC_TEST, 506, 191, 134, 17
-    LTEXT "手动检测结果（不更改监测历史）", -1, 194, 218, 446, 12
-    EDITTEXT IDC_RESULT, 194, 234, 446, 76, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
+    CONTROL "", IDC_CHECKS, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 194, 24, 446, 100
+    PUSHBUTTON "添加检测", IDC_CHECK_ADD, 194, 130, 69, 15
+    PUSHBUTTON "删除检测", IDC_CHECK_DELETE, 269, 130, 73, 15
+    LTEXT "名称", -1, 194, 157, 43, 10
+    EDITTEXT IDC_CHECK_NAME, 245, 154, 213, 15, ES_AUTOHSCROLL
+    LTEXT "类型", -1, 471, 157, 28, 10
+    COMBOBOX IDC_CHECK_KIND, 506, 154, 134, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT "主机 / URL", -1, 194, 180, 48, 10
+    EDITTEXT IDC_CHECK_TARGET, 245, 177, 395, 15, ES_AUTOHSCROLL
+    LTEXT "TCP 端口", -1, 194, 204, 49, 10
+    EDITTEXT IDC_CHECK_PORT, 245, 201, 58, 15, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT "间隔（秒）", -1, 315, 204, 54, 10
+    EDITTEXT IDC_CHECK_INTERVAL, 372, 201, 60, 15, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT "超时（毫秒）", -1, 448, 204, 70, 10
+    EDITTEXT IDC_CHECK_TIMEOUT, 523, 201, 117, 15, ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL "启用", IDC_CHECK_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 194, 226, 105, 13
+    PUSHBUTTON "立即检测（草稿）", IDC_TEST, 506, 223, 134, 17
+    LTEXT "手动检测结果（不更改监测历史）", -1, 194, 250, 446, 12
+    EDITTEXT IDC_RESULT, 194, 266, 446, 44, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
     LTEXT "指示器显示更改需要重启 TrafficMonitor。检测更改在保存后生效。网络检测在后台运行，可以关闭此窗口。", IDC_NOTICE, 10, 328, 470, 24
     PUSHBUTTON "帮助", IDC_OPEN_HELP, 10, 353, 68, 19
     PUSHBUTTON "导入 SSH...", IDC_IMPORT_SSH, 84, 353, 90, 19
@@ -93,6 +93,6 @@ BEGIN
     2212 "指示器颜色\r\n绿色：所有已启用检测均可用。黄色：部分可用，部分不可用。红色：所有已启用检测均不可用。灰色：至少一项检测没有当前有效结果、没有已启用的检测，或该组监测已禁用。连续失败三次才确认不可用；成功一次即恢复可用。首次成功前的前两次失败仍显示未知。已禁用的检测不参与汇总。"
     2213 "间隔与超时\r\n间隔为 1-86400 秒，决定检测调度频率；超时为 100-30000 毫秒，限制网络操作时间。默认值为 30 秒和 2000 ms。系统/DNS 回调清理可能耗时更长。结果过期后变灰；有效期为三个间隔与一个间隔加超时中的较大值，同时考虑结果和最后一次成功的新鲜度。包括手动检测在内，最多同时运行 4 项，每秒启动 4 项。配置较大时可能延迟并变灰。"
     2214 "监测与显示\r\n“监测此组”控制检测运行。“在任务栏显示”和可见分组上限决定向主程序提供哪些指示器；隐藏分组仍可监测。“全部”表示不限，0 隐藏所有组。更改实际指示器列表、名称、标签或顺序需要重启 TrafficMonitor。保存时仅在待应用布局与已加载布局不同时提醒重启。请在 TrafficMonitor 的任务栏设置中启用新增指示器。仅更改检测项时，保存后即可生效，无需重启。"
-    2215 "手动检测与保存\r\n“立即检测（草稿）”检测当前编辑内容，不保存也不更改监测历史。手动成功不会立即让任务栏圆点变绿。结果显示 ICMP RTT、TCP 连接耗时或 HTTP 响应头到达时间；“无数据”表示未取得测量值。HTTP 错误状态也可能带有响应时间。保存会写入配置并应用监测更改，清除旧结果。取消放弃未保存的编辑。关闭任一窗口不会取消后台检测。按 F1 也可打开帮助；帮助无需联网。"
+    2215 "手动检测与保存\r\n“立即检测（草稿）”检测当前编辑内容，不保存也不更改监测历史。手动成功不会立即让任务栏圆点变绿。结果显示 ICMP RTT、TCP 连接耗时或 HTTP 响应头到达时间；“无数据”表示未取得测量值。HTTP 错误状态也可能带有响应时间。保存会写入配置并应用监测更改，清除旧结果。取消放弃未保存的编辑。关闭任一窗口不会取消后台检测。按 F1 也可打开帮助；帮助无需联网。\r\n\r\n检测表每秒刷新两次已保存配置的监测结果：状态、ICMP/TCP/HTTP 耗时（毫秒）、含原始错误码的上次结果和本地检测时间。短横线表示没有结果或测量值。已过期表示结果已超过有效期。检测中或已过期的行保留上次结果。未保存的行在保存前不显示实时结果，手动检测结果单独显示。选择行进行编辑，可调整列宽。"
     2216 "检测失败时\r\nDNS 错误：检查主机名及名称解析。连接被拒绝：检查 TCP 端口和监听服务。超时：主机/服务可能不可达、被过滤，或响应超过设置的时限。TLS 错误：检查 URL 主机、证书信任和系统时间；不能跳过证书验证。HTTP 错误：查看返回的状态码。结果与提示保留原始数字错误码。已保存的分组和检测名称是用户数据，不会自动翻译。"
 END

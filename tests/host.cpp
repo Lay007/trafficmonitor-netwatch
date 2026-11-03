@@ -34,6 +34,14 @@ static HMODULE load(const wchar_t* path, ITMPlugin*& plugin) {
     require(factory != nullptr, "Undecorated TMPluginGetInstance export"); plugin = factory();
     require(plugin && plugin == factory() && plugin->GetAPIVersion() == 7, "Singleton and pinned API v7"); return module;
 }
+static void show_preview(const wchar_t* dll, const std::filesystem::path& directory, ITrafficMonitor* host) {
+    ITMPlugin* plugin{}; const auto module = load(dll, plugin);
+    plugin->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, directory.c_str()); plugin->OnInitialize(host);
+    std::atomic<bool> closed{false};
+    std::thread scheduler([&] { while (!closed) { plugin->DataRequired(); Sleep(100); } });
+    plugin->ShowOptionsDialog(nullptr);
+    closed = true; scheduler.join(); FreeLibrary(module);
+}
 static unsigned thread_count() {
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
     THREADENTRY32 entry{}; entry.dwSize = sizeof(entry); unsigned count = 0;
@@ -160,9 +168,7 @@ int wmain(int argc, wchar_t** argv) {
         if (argc == 1) {
             wchar_t executable[32768]{}; GetModuleFileNameW(nullptr, executable, 32768);
             auto directory = std::filesystem::path(executable).parent_path();
-            ITMPlugin* preview{}; auto module = load((directory / L"NetWatch.dll").c_str(), preview);
-            preview->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, (directory / L"preview-config").c_str()); preview->OnInitialize(nullptr);
-            preview->ShowOptionsDialog(nullptr); FreeLibrary(module); return 0;
+            show_preview((directory / L"NetWatch.dll").c_str(), directory / L"preview-config", nullptr); return 0;
         }
         require(argc >= 3, "Usage: netwatch_host DLL config-directory [--ui|--ui-zh-cn|--ui-zh-tw]");
         const std::filesystem::path directory = std::filesystem::absolute(argv[2]);
@@ -173,11 +179,8 @@ int wmain(int argc, wchar_t** argv) {
         }
         if (argc == 4 && std::wstring(argv[3]) == L"--render") { render_and_layout(argv[1], directory); return 0; }
         if (argc == 4 && (std::wstring(argv[3]) == L"--ui" || std::wstring(argv[3]) == L"--ui-zh-cn" || std::wstring(argv[3]) == L"--ui-zh-tw")) {
-            ITMPlugin* plugin{}; auto module = load(argv[1], plugin);
             LanguageHost host; host.language = std::wstring(argv[3]) == L"--ui-zh-cn" ? 0x804 : 0x404;
-            plugin->OnExtenedInfo(ITMPlugin::EI_CONFIG_DIR, directory.c_str());
-            plugin->OnInitialize(std::wstring(argv[3]) == L"--ui" ? nullptr : &host);
-            plugin->ShowOptionsDialog(nullptr); FreeLibrary(module); return 0;
+            show_preview(argv[1], directory, std::wstring(argv[3]) == L"--ui" ? nullptr : &host); return 0;
         }
         nw::Config config = nw::initial_config();
         config.groups.resize(1);

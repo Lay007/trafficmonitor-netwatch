@@ -1,6 +1,6 @@
 # Improvement and work plan
 
-Updated: 2026-11-02. This is a prioritized work plan, not a release schedule or verification report. Check an item only after its acceptance criteria are met. Record test results, environment, artifact hashes and remaining limitations in [verification.md](verification.md). Proposed features below do not authorize installation, publication or changes to an installed host.
+Updated: 2026-11-03. This is a prioritized work plan, not a release schedule or verification report. Check an item only after its acceptance criteria are met. Record test results, environment, artifact hashes and remaining limitations in [verification.md](verification.md). Proposed features below do not authorize installation, publication or changes to an installed host.
 
 ## Completed baseline
 
@@ -14,7 +14,7 @@ Updated: 2026-11-02. This is a prioritized work plan, not a release schedule or 
 - [x] Empty localized LOCAL, WEB and SSH defaults on first launch, with an explicit additive action for existing configurations.
 - [x] Local OpenSSH Host import with preview/selection, duplicate handling and TCP-check conversion; unsupported routes and syntax are explained rather than executed.
 
-These items describe implemented behavior. They do not imply that every desktop, theme or network scenario has been verified. The last full automated run passed 8/8 tests. Russian settings/SSH preview, both Chinese settings layouts and Simplified Chinese help scrolling were visually inspected in the standalone DLL host. The full theme/DPI/font matrix, remaining desktop help combinations and native-speaker review remain open. SSH endpoint import is distinct from the proposed NetWatch configuration export/import below.
+These items describe implemented behavior. They do not imply that every desktop, theme or network scenario has been verified. See the current automated results in [verification.md](verification.md). Earlier Russian settings/SSH preview, both Chinese settings layouts and Simplified Chinese help scrolling were visually inspected in the standalone DLL host. The new monitoring table has automated coverage; its desktop inspection remains open. The full theme/DPI/font matrix, remaining desktop help combinations and native-speaker review remain open. SSH endpoint import is distinct from the proposed NetWatch configuration export/import below.
 
 ## P0: verification before a release candidate
 
@@ -47,11 +47,11 @@ Acceptance: record host/DLL versions, configuration sizes, sampling interval, CP
 
 ### Per-check status in settings
 
-- [ ] Show each saved check's current state, latest typed measurement, last-update time and error without requiring a manual test.
+- [x] Show each saved check's current state, latest typed measurement, last-update time and error without requiring a manual test.
 
 Acceptance: read a copied engine snapshot without network work in the UI or under the engine mutex. Match results by stable UUID and configuration generation. Distinguish monitoring results from unsaved draft values and manual-test results; an edited destination must not appear to have a result produced for that draft. Preserve selection and edits during refresh. Show disabled, unknown and stale states explicitly. Test refresh during configuration changes and dialog closure.
 
-This is the proposed next implementation task: it makes the reason for a group's color visible beside its checks.
+Implemented with a copied per-group snapshot and a table refreshed every 500 ms. Automated coverage includes live success/failure, failure debounce, stale/disabled/unsaved rows, pending edits and invalid selection, generation changes, independent manual results and dialog closure. Desktop/DPI inspection of this updated table remains part of P0 verification.
 
 ### Compact and adaptable settings
 

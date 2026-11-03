@@ -7,11 +7,14 @@
 #include <stdexcept>
 #include <iomanip>
 #include <sstream>
+#include <array>
 
 namespace nw {
 namespace {
 std::wstring resource_string(HINSTANCE module, Language language, UINT id) {
-    wchar_t text[1024]{}; LoadStringW(module, id + resource_offset(language), text, 1024); return text;
+    const wchar_t* text{};
+    const auto length = LoadStringW(module, id + resource_offset(language), reinterpret_cast<LPWSTR>(&text), 0);
+    return length ? std::wstring(text, length) : std::wstring{};
 }
 std::filesystem::path user_home() {
     const auto length = GetEnvironmentVariableW(L"USERPROFILE", nullptr, 0);
@@ -193,6 +196,67 @@ struct Dialog {
         const auto error = validate(draft, language);
         if (!error.empty()) throw std::runtime_error(utf8(error));
     }
+    static bool same_check(const Check& a, const Check& b) {
+        return a.id == b.id && a.name == b.name && a.target == b.target && a.kind == b.kind && a.port == b.port &&
+            a.interval_ms == b.interval_ms && a.timeout_ms == b.timeout_ms && a.enabled == b.enabled;
+    }
+    bool editor_matches(const Check& c) const {
+        return text(IDC_CHECK_NAME) == c.name && text(IDC_CHECK_TARGET) == c.target &&
+            SendDlgItemMessageW(window, IDC_CHECK_KIND, CB_GETCURSEL, 0, 0) == static_cast<int>(c.kind) &&
+            (c.kind != Kind::Tcp || text(IDC_CHECK_PORT) == std::to_wstring(c.port)) &&
+            text(IDC_CHECK_INTERVAL) == std::to_wstring(c.interval_ms / 1000) &&
+            text(IDC_CHECK_TIMEOUT) == std::to_wstring(c.timeout_ms) && checked(IDC_CHECK_ENABLED) == c.enabled;
+    }
+    void refresh_status() {
+        if (group < 0) return;
+        const auto& selected = draft.groups.at(group);
+        const auto snapshot = engine.checks(selected.id);
+        std::map<std::wstring, const CheckSnapshot*> by_id;
+        for (const auto& item : snapshot) by_id.emplace(item.check.id, &item);
+        HWND list = GetDlgItem(window, IDC_CHECKS);
+        const auto now = Clock::now();
+        for (size_t i = 0; i < selected.checks.size(); ++i) {
+            const auto& c = selected.checks[i];
+            const auto found = by_id.find(c.id);
+            const auto* live = found == by_id.end() ? nullptr : found->second;
+            const bool edited = !live || (static_cast<int>(i) == check ? !editor_matches(live->check) : !same_check(c, live->check)) ||
+                (checked(IDC_GROUP_ENABLED) && live->check.enabled) != live->monitored;
+            std::array<std::wstring, 5> cells{static_cast<int>(i) == check ? text(IDC_CHECK_NAME) : c.name, L"", L"-", L"-", L"-"};
+            if (edited) cells[1] = translated(language, L"Unsaved", L"Не сохранено", L"未保存", L"未儲存");
+            else {
+                const auto* history = live->history ? &*live->history : nullptr;
+                cells[1] = !live->monitored ? translated(language, L"Disabled", L"Отключено", L"已禁用", L"已停用") :
+                    live->running ? translated(language, L"Checking...", L"Проверяется...", L"检测中...", L"檢查中...") :
+                    history && stale(live->check, *history, now) ? translated(language, L"Stale", L"Устарело", L"已过期", L"已過期") : health_text(health(live->check, history, now), language);
+                if (history && history->has_result) {
+                    const auto& result = history->last;
+                    cells[3] = error_text(result.error, language);
+                    if (result.http_status) cells[3] += L"; HTTP " + std::to_wstring(result.http_status);
+                    if (result.code) cells[3] += translated(language, L"; code=", L"; код=", L"; 错误码=", L"; 錯誤碼=") + std::to_wstring(result.code);
+                    if (history->failures) cells[3] += L"; " + std::to_wstring(history->failures) + L"/3";
+                    if (result.has_measurement) {
+                        std::wostringstream duration; duration << std::fixed << std::setprecision(1) << result.milliseconds;
+                        cells[2] = std::wstring(live->check.kind == Kind::Icmp ? L"ICMP " : live->check.kind == Kind::Tcp ? L"TCP " : L"HTTP ") + duration.str();
+                    }
+                    const auto time = std::chrono::system_clock::to_time_t(result.updated);
+                    tm local{};
+                    if (localtime_s(&local, &time) == 0) {
+                        std::wostringstream updated; updated << std::put_time(&local, L"%Y-%m-%d %H:%M:%S"); cells[4] = updated.str();
+                    }
+                }
+            }
+            // Update cells in place so polling preserves selection, scroll and unfinished edits.
+            for (int column = 0; column < static_cast<int>(cells.size()); ++column) {
+                wchar_t previous[4096]{};
+                ListView_GetItemText(list, static_cast<int>(i), column, previous, 4096);
+                if (cells[column] != previous) ListView_SetItemText(list, static_cast<int>(i), column, cells[column].data());
+            }
+        }
+    }
+    void select_check(const NMLISTVIEW& change) {
+        if (filling || !(change.uChanged & LVIF_STATE) || !(change.uNewState & LVIS_SELECTED) || (change.uOldState & LVIS_SELECTED)) return;
+        capture(); check = change.iItem; fill_check(); refresh_status();
+    }
     void fill_check() {
         filling = true;
         const bool selected = group >= 0 && check >= 0;
@@ -212,18 +276,24 @@ struct Dialog {
     void fill_group() {
         filling = true;
         for (int id : {IDC_GROUP_NAME, IDC_GROUP_LABEL, IDC_GROUP_ENABLED, IDC_GROUP_VISIBLE, IDC_GROUP_DELETE, IDC_GROUP_UP, IDC_GROUP_DOWN, IDC_CHECK_ADD}) enable(id, group >= 0);
-        SendDlgItemMessageW(window, IDC_CHECKS, LB_RESETCONTENT, 0, 0);
+        HWND list = GetDlgItem(window, IDC_CHECKS); ListView_DeleteAllItems(list);
         if (group >= 0) {
             const auto& g = draft.groups.at(group);
             text(IDC_GROUP_NAME, g.name); text(IDC_GROUP_LABEL, g.label);
             checked(IDC_GROUP_ENABLED, g.enabled); checked(IDC_GROUP_VISIBLE, g.visible);
-            for (const auto& c : g.checks) SendDlgItemMessageW(window, IDC_CHECKS, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(c.name.c_str()));
+            for (size_t i = 0; i < g.checks.size(); ++i) {
+                LVITEMW row{}; row.mask = LVIF_TEXT; row.iItem = static_cast<int>(i); row.pszText = const_cast<wchar_t*>(g.checks[i].name.c_str());
+                ListView_InsertItem(list, &row);
+            }
             check = g.checks.empty() ? -1 : (std::max)(0, (std::min)(check, static_cast<int>(g.checks.size()) - 1));
         } else {
             text(IDC_GROUP_NAME, L""); text(IDC_GROUP_LABEL, L""); checked(IDC_GROUP_ENABLED, false); checked(IDC_GROUP_VISIBLE, false); check = -1;
         }
-        SendDlgItemMessageW(window, IDC_CHECKS, LB_SETCURSEL, check, 0);
-        filling = false; fill_check();
+        if (check >= 0) {
+            ListView_SetItemState(list, check, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+            ListView_EnsureVisible(list, check, FALSE);
+        }
+        filling = false; fill_check(); refresh_status();
     }
     void fill_groups() {
         filling = true;
@@ -234,6 +304,18 @@ struct Dialog {
         filling = false; fill_group();
     }
     void initialize() {
+        HWND list = GetDlgItem(window, IDC_CHECKS);
+        ListView_SetExtendedListViewStyle(list, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_LABELTIP);
+        const wchar_t* titles[] = {
+            translated(language, L"Name", L"Название", L"名称", L"名稱"), translated(language, L"State", L"Состояние", L"状态", L"狀態"),
+            translated(language, L"Time, ms", L"Время, мс", L"耗时，毫秒", L"耗時，毫秒"),
+            translated(language, L"Last result", L"Последний результат", L"上次结果", L"上次結果"), translated(language, L"Checked", L"Проверено", L"检测时间", L"檢查時間")
+        };
+        RECT bounds{}; GetClientRect(list, &bounds); const int widths[] = {24, 16, 12, 28, 20};
+        for (int i = 0; i < 5; ++i) {
+            LVCOLUMNW column{}; column.mask = LVCF_TEXT | LVCF_WIDTH; column.pszText = const_cast<wchar_t*>(titles[i]);
+            column.cx = (bounds.right - GetSystemMetrics(SM_CXVSCROLL)) * widths[i] / 100; ListView_InsertColumn(list, i, &column);
+        }
         const auto all = string(IDS_ALL);
         for (const auto value : {all.c_str(), L"0", L"1", L"2", L"4", L"8"}) SendDlgItemMessageW(window, IDC_LIMIT, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(value));
         for (const auto value : {L"ICMP", L"TCP", L"HTTP / HTTPS"}) SendDlgItemMessageW(window, IDC_CHECK_KIND, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(value));
@@ -243,6 +325,7 @@ struct Dialog {
         SendDlgItemMessageW(window, IDC_CHECK_NAME, EM_SETLIMITTEXT, 128, 0);
         SendDlgItemMessageW(window, IDC_CHECK_TARGET, EM_SETLIMITTEXT, 2048, 0);
         fill_groups();
+        SetTimer(window, 2, 500, nullptr);
         if (!load_error.empty()) text(IDC_RESULT, load_error + L"\r\n" + string(IDS_LOAD_ERROR));
     }
     void command(int id, int notification) {
@@ -255,10 +338,6 @@ struct Dialog {
         if (id == IDC_GROUPS && notification == LBN_SELCHANGE) {
             const int next = static_cast<int>(SendDlgItemMessageW(window, IDC_GROUPS, LB_GETCURSEL, 0, 0));
             capture(); group = next; check = -1; fill_groups(); return;
-        }
-        if (id == IDC_CHECKS && notification == LBN_SELCHANGE) {
-            const int next = static_cast<int>(SendDlgItemMessageW(window, IDC_CHECKS, LB_GETCURSEL, 0, 0));
-            capture(); check = next; fill_group(); return;
         }
         if (notification != BN_CLICKED) return;
         if (id == IDC_GROUP_DELETE && group >= 0) {
@@ -317,14 +396,20 @@ INT_PTR CALLBACK procedure(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         }
         if (!self) return FALSE;
         if (message == WM_HELP) { self->help(); return TRUE; }
+        if (message == WM_NOTIFY && reinterpret_cast<NMHDR*>(lparam)->idFrom == IDC_CHECKS && reinterpret_cast<NMHDR*>(lparam)->code == LVN_ITEMCHANGED) {
+            self->select_check(*reinterpret_cast<NMLISTVIEW*>(lparam)); return TRUE;
+        }
         if (message == WM_COMMAND) { self->command(LOWORD(wparam), HIWORD(wparam)); return TRUE; }
-        if (message == WM_TIMER) { self->poll(); return TRUE; }
+        if (message == WM_TIMER) { if (wparam == 2) self->refresh_status(); else if (wparam == 1) self->poll(); return TRUE; }
         if (message == WM_CLOSE) { EndDialog(window, IDCANCEL); return TRUE; }
-        if (message == WM_DESTROY) { KillTimer(window, 1); self->manual.reset(); return TRUE; }
+        if (message == WM_DESTROY) { KillTimer(window, 1); KillTimer(window, 2); self->manual.reset(); return TRUE; }
     } catch (const std::exception& error) {
         if (self) {
             SendDlgItemMessageW(window, IDC_GROUPS, LB_SETCURSEL, self->group, 0);
-            SendDlgItemMessageW(window, IDC_CHECKS, LB_SETCURSEL, self->check, 0);
+            self->filling = true;
+            ListView_SetItemState(GetDlgItem(window, IDC_CHECKS), -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+            if (self->check >= 0) ListView_SetItemState(GetDlgItem(window, IDC_CHECKS), self->check, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+            self->filling = false;
             MessageBoxW(window, wide(error.what()).c_str(), L"NetWatch", MB_OK | MB_ICONERROR);
         }
     } catch (...) { MessageBoxW(window, self ? self->string(IDS_UNEXPECTED).c_str() : L"Unexpected error", L"NetWatch", MB_OK | MB_ICONERROR); }
@@ -333,6 +418,7 @@ INT_PTR CALLBACK procedure(HWND window, UINT message, WPARAM wparam, LPARAM lpar
 }
 bool show_settings(HWND parent, HINSTANCE module, Engine& engine, const std::filesystem::path& path,
     const std::wstring& error, const std::vector<Group>& exported, Language language) {
+    INITCOMMONCONTROLSEX controls{sizeof(controls), ICC_LISTVIEW_CLASSES}; InitCommonControlsEx(&controls);
     Dialog dialog{module, engine, path, error, engine.configuration(), exported, language};
     const auto result = DialogBoxParamW(module, MAKEINTRESOURCEW(IDD_SETTINGS + resource_offset(language)), parent, procedure, reinterpret_cast<LPARAM>(&dialog));
     if (result == -1) throw std::runtime_error("Cannot create NetWatch settings dialog");
